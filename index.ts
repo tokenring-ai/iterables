@@ -3,7 +3,7 @@ import * as chatCommands from "./chatCommands.ts";
 import IterableService from "./IterableService.js";
 import packageJSON from './package.json' with {type: 'json'};
 
-export const packageInfo: TokenRingPackage = {
+export default {
   name: packageJSON.name,
   version: packageJSON.version,
   description: packageJSON.description,
@@ -11,7 +11,7 @@ export const packageInfo: TokenRingPackage = {
     agentTeam.addChatCommands(chatCommands);
     agentTeam.addServices(new IterableService());
   },
-};
+} as TokenRingPackage;
 
 export {default as IterableService} from "./IterableService.ts";
 export type {IterableProvider, IterableItem, IterableSpec, IterableMetadata} from "./IterableProvider.ts";
