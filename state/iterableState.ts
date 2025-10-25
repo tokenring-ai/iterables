@@ -1,5 +1,5 @@
-import type {AgentStateSlice} from "@tokenring-ai/agent/types";
 import {ResetWhat} from "@tokenring-ai/agent/AgentEvents";
+import type {AgentStateSlice} from "@tokenring-ai/agent/types";
 import {IterableSpec} from "../IterableProvider.ts";
 
 export interface StoredIterable {
@@ -40,5 +40,12 @@ export class IterableState implements AgentStateSlice {
         }
       ])
     );
+  }
+
+  show(): string[] {
+    return [
+      `Iterables: ${this.iterables.size}`,
+      ...Array.from(this.iterables.values()).map(i => `  - ${i.name} (${i.type})`)
+    ];
   }
 }

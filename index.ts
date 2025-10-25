@@ -8,7 +8,9 @@ export default {
   version: packageJSON.version,
   description: packageJSON.description,
   install(agentTeam: AgentTeam) {
-    agentTeam.addChatCommands(chatCommands);
+    agentTeam.waitForService(AgentCommandService, agentCommandService =>
+      agentCommandService.addAgentCommands(chatCommands)
+    );
     agentTeam.addServices(new IterableService());
   },
 } as TokenRingPackage;
