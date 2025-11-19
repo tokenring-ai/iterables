@@ -1,15 +1,15 @@
 {
-  "name": "@tokenring-ai/iterables",
-  "version": "0.1.0",
-  "description": "Iterable management for TokenRing",
-  "dependencies": {
-    "@tokenring-ai/agent": "0.1.0",
-    "@tokenring-ai/ai-client": "0.1.0"
-  },
-  "exports": {
-    ".": "./index.ts",
-    "./*": "./*.ts"
-  },
-  "license": "MIT",
-  "type": "module"
+ "name": "@tokenring-ai/iterables",
+ "version": "0.1.0",
+ "description": "Iterable management for TokenRing",
+ "dependencies": {
+  "@tokenring-ai/agent": "0.1.0",
+  "@tokenring-ai/chat": "0.1.0"
+ },
+ "exports": {
+  ".": "./index.ts",
+  "./*": "./*.ts"
+ },
+ "license": "MIT",
+ "type": "module"
 }

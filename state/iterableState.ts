@@ -15,7 +15,7 @@ export class IterableState implements AgentStateSlice {
   name = "IterableState";
   iterables: Map<string, StoredIterable> = new Map();
 
-  constructor({iterables = []}: {iterables?: StoredIterable[]} = {}) {
+  constructor({iterables = []}: { iterables?: StoredIterable[] } = {}) {
     this.iterables = new Map(iterables.map(i => [i.name, i]));
   }
 

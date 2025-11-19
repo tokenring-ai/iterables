@@ -20,7 +20,8 @@ export interface IterableMetadata {
 export interface IterableProvider {
   readonly type: string;
   readonly description: string;
-  
-  getArgsConfig(): {options: Record<string, {type: 'string' | 'boolean', multiple?: boolean}>};
+
+  getArgsConfig(): { options: Record<string, { type: 'string' | 'boolean', multiple?: boolean }> };
+
   generate(spec: IterableSpec, agent: Agent): AsyncGenerator<IterableItem>;
 }
