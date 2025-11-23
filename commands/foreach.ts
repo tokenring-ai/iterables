@@ -1,10 +1,11 @@
 import Agent from "@tokenring-ai/agent/Agent";
+import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
 import runChat from "@tokenring-ai/chat/runChat";
 import IterableService from "../IterableService.ts";
 
-export const description = "/foreach @<iterable> <prompt> - Run a prompt on each item in an iterable";
+const description = "/foreach @<iterable> <prompt> - Run a prompt on each item in an iterable";
 
-export async function execute(remainder: string, agent: Agent) {
+async function execute(remainder: string, agent: Agent) {
   const iterableService = agent.requireServiceByType(IterableService);
 
   if (!remainder || !remainder.trim()) {
@@ -77,3 +78,8 @@ export function help() {
     '  - Example: /foreach @ts-files "Add comments to {file}"',
   ];
 }
+export default {
+  description,
+  execute,
+  help,
+} as TokenRingAgentCommand

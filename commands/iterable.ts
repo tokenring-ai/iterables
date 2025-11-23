@@ -1,10 +1,11 @@
 import Agent from "@tokenring-ai/agent/Agent";
+import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
 import {parseArgs} from "node:util";
 import IterableService from "../IterableService.ts";
 
-export const description = "/iterable [define|list|show|delete] - Manage named iterables";
+const description = "/iterable [define|list|show|delete] - Manage named iterables";
 
-export async function execute(remainder: string, agent: Agent) {
+async function execute(remainder: string, agent: Agent) {
   const iterableService = agent.requireServiceByType(IterableService);
 
   if (!remainder?.trim()) {
@@ -142,3 +143,8 @@ export function help() {
     "  - delete <name>: removes an iterable",
   ];
 }
+export default {
+  description,
+  execute,
+  help,
+} as TokenRingAgentCommand
