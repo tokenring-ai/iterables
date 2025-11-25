@@ -1,15 +1,28 @@
-# Iterables Package
+# @tokenring-ai/iterables
 
 ## Overview
 
-The `@tokenring-ai/iterables` package provides a pluggable system for defining and using named iterables in TokenRing.
-Iterables are reusable data sources that can be used with the `/foreach` command to batch process items.
+The `@tokenring-ai/iterables` package provides a pluggable system for defining and using named iterables in TokenRing. Iterables are reusable data sources that can be used with the `/foreach` command to batch process items across various data types and sources.
+
+## Installation
+
+```bash
+npm install @tokenring-ai/iterables
+```
+
+## Dependencies
+
+- `@tokenring-ai/agent` ^0.1.0 - Agent framework and command services
+- `@tokenring-ai/chat` ^0.1.0 - Chat functionality for processing items
+- `@tokenring-ai/utility` ^0.1.0 - Utility classes including KeyedRegistry
 
 ## Key Concepts
 
 - **Iterable**: A named, reusable data source (e.g., file globs, database queries, API results)
 - **Provider**: A plugin that defines how to generate items from a specific type of iterable
 - **Spec**: Configuration parameters for an iterable instance
+- **IterableService**: Core service that manages providers and iterable definitions
+- **IterableState**: Persists iterable definitions across agent sessions
 
 ## Usage
 
@@ -58,7 +71,7 @@ In `/foreach` prompts, use `{variable}` syntax to access item properties:
 /foreach @ts-files "File: {file}, Size: {size} bytes, Modified: {modified}"
 ```
 
-Available variables depend on the provider type.
+Available variables depend on the provider type. The system supports nested property access using dot notation.
 
 ## Built-in Providers
 
@@ -145,12 +158,7 @@ export default class MyIterableProvider implements IterableProvider {
 In your package's service `attach()` method:
 
 ```typescript
-async
-attach(agent
-:
-Agent
-):
-Promise < void > {
+async attach(agent: Agent): Promise<void> {
   // ... other initialization ...
 
   const {IterableService} = await import("@tokenring-ai/iterables");
@@ -191,8 +199,7 @@ export const packageInfo: TokenRingPackage = {
 Return an object with `options` defining accepted arguments:
 
 ```typescript
-getArgsConfig()
-{
+getArgsConfig() {
   return {
     options: {
       // String argument
@@ -281,17 +288,11 @@ Usage:
 ```typescript
 class IterableService {
   registerProvider(provider: IterableProvider): void;
-
   getProvider(type: string): IterableProvider | undefined;
-
   define(name: string, type: string, spec: IterableSpec, description: string | undefined, agent: Agent): Promise<void>;
-
   get(name: string, agent: Agent): StoredIterable | undefined;
-
   list(agent: Agent): StoredIterable[];
-
   delete(name: string, agent: Agent): boolean;
-
   generate(name: string, agent: Agent): AsyncGenerator<IterableItem>;
 }
 ```
@@ -302,9 +303,7 @@ class IterableService {
 interface IterableProvider {
   readonly type: string;
   readonly description: string;
-
   getArgsConfig(): { options: Record<string, { type: 'string' | 'boolean', multiple?: boolean }> };
-
   generate(spec: IterableSpec, agent: Agent): AsyncGenerator<IterableItem>;
 }
 ```
@@ -316,6 +315,31 @@ interface IterableItem {
   value: any;
   variables: Record<string, any>;
 }
+```
+
+### StoredIterable
+
+```typescript
+interface StoredIterable {
+  name: string;
+  type: string;
+  spec: IterableSpec;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+## Integration
+
+The package integrates with TokenRing as a plugin:
+
+```typescript
+import {TokenRingApp} from "@tokenring-ai/app";
+import iterablesPlugin from "@tokenring-ai/iterables";
+
+const app = new TokenRingApp();
+app.use(iterablesPlugin);
 ```
 
 ## License
