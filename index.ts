@@ -1,3 +1,4 @@
+import {AgentCommandService} from "@tokenring-ai/agent";
 import TokenRingApp from "@tokenring-ai/app";
 import {TokenRingPlugin} from "@tokenring-ai/app";
 import * as chatCommands from "./chatCommands.ts";
