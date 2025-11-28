@@ -3,13 +3,13 @@ import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
 import {parseArgs} from "node:util";
 import IterableService from "../IterableService.ts";
 
-const description = "/iterable [define|list|show|delete] - Manage named iterables";
+const description = "/iterable - Manage named iterables";
 
 async function execute(remainder: string, agent: Agent) {
   const iterableService = agent.requireServiceByType(IterableService);
 
   if (!remainder?.trim()) {
-    help().forEach(line => agent.infoLine(line));
+    agent.chatOutput(help)
     return;
   }
 
@@ -129,20 +129,59 @@ async function execute(remainder: string, agent: Agent) {
     }
 
     default:
-      help().forEach(line => agent.infoLine(line));
+      agent.chatOutput(help);
       break;
   }
 }
 
-export function help() {
-  return [
-    "/iterable [define|list|show|delete]",
-    "  - define <name> --type <type> [type-specific-options] [--description \"...\"]",
-    "  - list: shows all defined iterables",
-    "  - show <name>: shows details of an iterable",
-    "  - delete <name>: removes an iterable",
-  ];
-}
+const help: string = `# /iterable - Manage named iterables
+
+Manage named iterables - collections of data that can be processed iteratively
+
+## Usage
+
+/iterable <command> [options]
+
+## Commands
+
+### define <name> --type <type> [options] [--description "..."]
+
+Create a new iterable with specified type and configuration
+
+**Examples:**
+/iterable define files --type file --pattern "**/*.ts"
+/iterable define projects --type json --file "projects.json" --description "My project list"
+
+### list
+
+Show all defined iterables with their types and descriptions
+
+**Example:**
+/iterable list
+
+### show <name>
+
+Display detailed information about a specific iterable
+
+**Example:**
+/iterable show files
+
+### delete <name>
+
+Remove a defined iterable permanently
+
+**Example:**
+/iterable delete old-projects
+
+## Common iterable types
+
+- **file**: Process files matching patterns
+- **json**: Process items from JSON files
+- **csv**: Process items from CSV files
+- **api**: Process items from API endpoints
+
+**Note:** Use \`/foreach @<iterable> <prompt>\` to process items in an iterable`;
+
 export default {
   description,
   execute,

@@ -1,7 +1,7 @@
 import {AgentCommandService} from "@tokenring-ai/agent";
 import TokenRingApp from "@tokenring-ai/app";
 import {TokenRingPlugin} from "@tokenring-ai/app";
-import * as chatCommands from "./chatCommands.ts";
+import chatCommands from "./chatCommands.ts";
 import IterableService from "./IterableService.js";
 import packageJSON from './package.json' with {type: 'json'};
 
