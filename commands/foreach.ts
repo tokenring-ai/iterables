@@ -1,5 +1,6 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
+import {ChatService} from "@tokenring-ai/chat";
 import runChat from "@tokenring-ai/chat/runChat";
 import IterableService from "../IterableService.ts";
 
@@ -44,8 +45,11 @@ async function execute(remainder: string, agent: Agent) {
 
       const interpolatedPrompt = interpolate(prompt, item.variables);
 
+      const chatService = agent.requireServiceByType(ChatService);
+      const chatConfig = chatService.getChatConfig(agent);
+
       try {
-        await runChat({input: interpolatedPrompt}, agent);
+        await runChat(interpolatedPrompt, chatConfig, agent);
       } catch (error) {
         agent.errorLine(`Error processing item ${count}: ${error}`);
       }
