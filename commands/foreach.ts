@@ -54,12 +54,12 @@ async function execute(remainder: string, agent: Agent) {
         agent.errorLine(`Error processing item ${count}: ${error}`);
       }
 
-      agent.restoreCheckpoint(checkpoint);
+      agent.restoreState(checkpoint.state);
     }
 
     agent.infoLine(`Processed ${count} items`);
   } finally {
-    agent.restoreCheckpoint(checkpoint);
+    agent.restoreState(checkpoint.state);
   }
 }
 
