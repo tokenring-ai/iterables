@@ -16,4 +16,4 @@ export default {
     );
     app.addServices(new IterableService());
   },
-} as TokenRingPlugin;
+} satisfies TokenRingPlugin;
