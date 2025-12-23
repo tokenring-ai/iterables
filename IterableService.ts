@@ -17,7 +17,7 @@ export default class IterableService implements TokenRingService {
     agent.initializeState(IterableState, {});
   }
 
-  async define(name: string, type: string, spec: IterableSpec, description: string | undefined, agent: Agent): Promise<void> {
+  async define(name: string, type: string, spec: IterableSpec, agent: Agent): Promise<void> {
     const provider = this.providers.getItemByName(type);
     if (!provider) {
       throw new Error(`Unknown iterable type: ${type}`);
@@ -28,7 +28,6 @@ export default class IterableService implements TokenRingService {
       name,
       type,
       spec,
-      description,
       createdAt: now,
       updatedAt: now,
     };

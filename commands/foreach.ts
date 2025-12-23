@@ -10,7 +10,7 @@ async function execute(remainder: string, agent: Agent) {
   const iterableService = agent.requireServiceByType(IterableService);
 
   if (!remainder || !remainder.trim()) {
-    agent.chatOutput(help);
+    agent.errorLine(help);
     return;
   }
 

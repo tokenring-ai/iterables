@@ -6,7 +6,6 @@ export interface StoredIterable {
   name: string;
   type: string;
   spec: IterableSpec;
-  description?: string;
   createdAt: Date;
   updatedAt: Date;
 }
