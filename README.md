@@ -7,15 +7,16 @@ The `@tokenring-ai/iterables` package provides a pluggable system for defining a
 ## Installation
 
 ```bash
-npm install @tokenring-ai/iterables
+bun install @tokenring-ai/iterables
 ```
 
 ## Dependencies
 
+- `@tokenring-ai/app` ^0.2.0 - Application framework and plugin system
 - `@tokenring-ai/agent` ^0.2.0 - Agent framework and command services
 - `@tokenring-ai/chat` ^0.2.0 - Chat functionality for processing items
-- `@tokenring-ai/app` ^0.2.0 - Application framework and plugin system
 - `zod` - Schema validation
+- `@tokenring-ai/utility` - Registry utilities for provider management
 
 ## Key Concepts
 
@@ -54,11 +55,12 @@ class IterableService implements TokenRingService {
   
   registerProvider(provider: IterableProvider): void;
   getProvider(type: string): IterableProvider | undefined;
-  define(name: string, type: string, spec: IterableSpec, description: string | undefined, agent: Agent): Promise<void>;
+  
+  async define(name: string, type: string, spec: IterableSpec, agent: Agent): Promise<void>;
   get(name: string, agent: Agent): StoredIterable | undefined;
   list(agent: Agent): StoredIterable[];
   delete(name: string, agent: Agent): boolean;
-  generate(name: string, agent: Agent): AsyncGenerator<IterableItem>;
+  async* generate(name: string, agent: Agent): AsyncGenerator<IterableItem>;
 }
 ```
 
@@ -96,7 +98,6 @@ interface StoredIterable {
   name: string;
   type: string;
   spec: IterableSpec;
-  description?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -331,7 +332,7 @@ class IterableService implements TokenRingService {
   registerProvider(provider: IterableProvider): void;
   getProvider(type: string): IterableProvider | undefined;
   
-  async define(name: string, type: string, spec: IterableSpec, description: string | undefined, agent: Agent): Promise<void>;
+  async define(name: string, type: string, spec: IterableSpec, agent: Agent): Promise<void>;
   get(name: string, agent: Agent): StoredIterable | undefined;
   list(agent: Agent): StoredIterable[];
   delete(name: string, agent: Agent): boolean;
@@ -440,13 +441,13 @@ No global configuration required. Each iterable is configured individually throu
 The package includes Vitest configuration for testing:
 
 ```bash
-npm test
+bun run test
 ```
 
 ### Building
 
 ```bash
-npm run build
+bun run build
 ```
 
 ## Common Use Cases
