@@ -103,6 +103,23 @@ interface StoredIterable {
 }
 ```
 
+### IterableState
+
+State management class:
+
+```typescript
+class IterableState implements AgentStateSlice {
+  name = "IterableState";
+  iterables: Map<string, StoredIterable> = new Map();
+  
+  constructor({iterables = []}: { iterables?: StoredIterable[] } = {});
+  reset(what: ResetWhat[]): void;
+  serialize(): object;
+  deserialize(data: any): void;
+  show(): string[];
+}
+```
+
 ## Usage
 
 ### Defining Iterables
@@ -221,7 +238,7 @@ In your service's `attach()` method:
 ```typescript
 async attach(agent: Agent): Promise<void> {
   // ... other initialization ...
-
+  
   const {IterableService} = await import("@tokenring-ai/iterables");
   const iterableService = agent.tryServiceByType(IterableService);
   if(iterableService) {
