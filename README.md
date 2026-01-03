@@ -10,14 +10,6 @@ The `@tokenring-ai/iterables` package provides a pluggable system for defining a
 bun install @tokenring-ai/iterables
 ```
 
-## Dependencies
-
-- `@tokenring-ai/app` ^0.2.0 - Application framework and plugin system
-- `@tokenring-ai/agent` ^0.2.0 - Agent framework and command services
-- `@tokenring-ai/chat` ^0.2.0 - Chat functionality for processing items
-- `zod` - Schema validation
-- `@tokenring-ai/utility` - Registry utilities for provider management
-
 ## Key Concepts
 
 - **Iterable**: A named, reusable data source (e.g., file globs, database queries, API results)
@@ -31,15 +23,16 @@ bun install @tokenring-ai/iterables
 ```
 pkg/iterables/
 ├── index.ts                 # Main exports
-├── plugin.ts               # Plugin definition for TokenRing integration
-├── IterableService.ts      # Core service implementation
-├── IterableProvider.ts     # Provider interface and types
+├── plugin.ts                # Plugin definition for TokenRing integration
+├── IterableService.ts       # Core service implementation
+├── IterableProvider.ts      # Provider interface and types
 ├── state/
-│   └── iterableState.ts    # State management for iterables
+│   └── iterableState.ts     # State management for iterables
 ├── commands/
-│   ├── iterable.ts         # /iterable command implementation
-│   └── foreach.ts          # /foreach command implementation
-└── chatCommands.ts         # Command exports
+│   ├── iterable.ts          # /iterable command implementation
+│   └── foreach.ts           # /foreach command implementation
+├── chatCommands.ts          # Command exports
+└── LICENSE
 ```
 
 ## Core Components
@@ -52,10 +45,10 @@ The core service that manages providers and iterable definitions:
 class IterableService implements TokenRingService {
   name = "IterableService";
   description = "Manages named iterables for batch operations";
-  
+
   registerProvider(provider: IterableProvider): void;
   getProvider(type: string): IterableProvider | undefined;
-  
+
   async define(name: string, type: string, spec: IterableSpec, agent: Agent): Promise<void>;
   get(name: string, agent: Agent): StoredIterable | undefined;
   list(agent: Agent): StoredIterable[];
@@ -72,7 +65,7 @@ All iterable providers must implement this interface:
 interface IterableProvider {
   readonly type: string;
   readonly description: string;
-  
+
   getArgsConfig(): { options: Record<string, { type: 'string' | 'boolean', multiple?: boolean }> };
   generate(spec: IterableSpec, agent: Agent): AsyncGenerator<IterableItem>;
 }
@@ -86,6 +79,16 @@ Items yielded by providers:
 interface IterableItem {
   value: any;
   variables: Record<string, any>;
+}
+```
+
+### IterableSpec
+
+Specification parameters for an iterable:
+
+```typescript
+interface IterableSpec {
+  [key: string]: any;
 }
 ```
 
@@ -111,7 +114,7 @@ State management class:
 class IterableState implements AgentStateSlice {
   name = "IterableState";
   iterables: Map<string, StoredIterable> = new Map();
-  
+
   constructor({iterables = []}: { iterables?: StoredIterable[] } = {});
   reset(what: ResetWhat[]): void;
   serialize(): object;
@@ -130,8 +133,8 @@ Use the `/iterable define` command with type-specific arguments:
 # Define a glob iterable for TypeScript files
 /iterable define ts-files --type glob --pattern "src/**/*.ts"
 
-# Define with description
-/iterable define test-files --type glob --pattern "**/*.test.ts" --description "All test files"
+# Define a JSON iterable
+/iterable define users --type json --file "users.json"
 ```
 
 ### Using Iterables
@@ -238,7 +241,7 @@ In your service's `attach()` method:
 ```typescript
 async attach(agent: Agent): Promise<void> {
   // ... other initialization ...
-  
+
   const {IterableService} = await import("@tokenring-ai/iterables");
   const iterableService = agent.tryServiceByType(IterableService);
   if(iterableService) {
@@ -348,7 +351,7 @@ class IterableService implements TokenRingService {
 
   registerProvider(provider: IterableProvider): void;
   getProvider(type: string): IterableProvider | undefined;
-  
+
   async define(name: string, type: string, spec: IterableSpec, agent: Agent): Promise<void>;
   get(name: string, agent: Agent): StoredIterable | undefined;
   list(agent: Agent): StoredIterable[];
@@ -380,7 +383,7 @@ Manage named iterables:
 
 ```bash
 # Define a new iterable
-/iterable define <name> --type <type> [options] [--description "..."]
+/iterable define <name> --type <type> [options]
 
 # List all iterables
 /iterable list
@@ -421,6 +424,21 @@ Process each item in an iterable:
   # Access nested properties with fallback
 ```
 
+## Plugin Configuration
+
+The iterables plugin uses a minimal configuration schema:
+
+```typescript
+import {z} from "zod";
+
+const packageConfigSchema = z.object({});
+```
+
+No configuration is required by default. The plugin automatically:
+1. Registers chat commands (`/iterable` and `/foreach`)
+2. Adds the IterableService to the application
+3. Initializes the IterableState for each agent
+
 ## Integration
 
 The package integrates with TokenRing as a plugin:
@@ -433,23 +451,11 @@ const app = new TokenRingApp();
 app.use(iterablesPlugin);
 ```
 
-### Plugin Integration
-
-The plugin automatically:
-
-1. Registers chat commands (`/iterable` and `/foreach`)
-2. Adds the IterableService to the application
-3. Initializes the IterableState for each agent
-
 ### State Management
 
 - **IterableState** persists iterable definitions across agent sessions
 - Iterables are not reset when the agent is reset
 - State serialization includes all stored iterables with creation/modification timestamps
-
-## Configuration
-
-No global configuration required. Each iterable is configured individually through the `/iterable define` command with provider-specific options.
 
 ## Development
 
@@ -465,6 +471,18 @@ bun run test
 
 ```bash
 bun run build
+```
+
+### Watch Mode
+
+```bash
+bun run test:watch
+```
+
+### Coverage
+
+```bash
+bun run test:coverage
 ```
 
 ## Common Use Cases
@@ -493,4 +511,4 @@ The package provides comprehensive error handling:
 
 ## License
 
-MIT
+MIT License - see [LICENSE](./LICENSE) file for details.
