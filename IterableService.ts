@@ -13,7 +13,7 @@ export default class IterableService implements TokenRingService {
   registerProvider = this.providers.register;
   getProvider = this.providers.getItemByName;
 
-  async attach(agent: Agent): Promise<void> {
+  attach(agent: Agent): void {
     agent.initializeState(IterableState, {});
   }
 
