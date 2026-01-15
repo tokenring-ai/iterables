@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { IterableState, StoredIterable } from '../state/iterableState';
-import { ResetWhat } from '@tokenring-ai/agent/AgentEvents';
+import {ResetWhat} from '@tokenring-ai/agent/AgentEvents';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {IterableState, StoredIterable} from '../state/iterableState';
 
 // Mock the agent dependencies
 vi.mock('@tokenring-ai/agent/AgentEvents');

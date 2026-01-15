@@ -1,11 +1,11 @@
+import Agent from '@tokenring-ai/agent/Agent';
 import createTestingAgent from "@tokenring-ai/agent/test/createTestingAgent";
 import TokenRingApp from "@tokenring-ai/app";
 import createTestingApp from "@tokenring-ai/app/test/createTestingApp";
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import type {IterableItem, IterableProvider, IterableSpec} from '../IterableProvider';
 import IterableService from '../IterableService';
-import type { IterableItem, IterableProvider, IterableSpec } from '../IterableProvider';
-import { IterableState } from '../state/iterableState';
-import Agent from '@tokenring-ai/agent/Agent';
+import {IterableState} from '../state/iterableState';
 
 class FileIterableProvider implements IterableProvider {
   readonly type = 'file';

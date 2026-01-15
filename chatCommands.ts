@@ -1,5 +1,5 @@
-import iterable from "./commands/iterable.ts";
 import foreach from "./commands/foreach.ts";
+import iterable from "./commands/iterable.ts";
 
 export default {
   iterable,

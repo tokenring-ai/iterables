@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { IterableProvider, IterableItem, IterableSpec } from '../IterableProvider';
 import Agent from '@tokenring-ai/agent/Agent';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
+import type {IterableItem, IterableProvider, IterableSpec} from '../IterableProvider';
 
 // Mock the agent dependencies
 vi.mock('@tokenring-ai/agent/Agent');

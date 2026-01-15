@@ -10,20 +10,20 @@ async function execute(remainder: string, agent: Agent) {
   const iterableService = agent.requireServiceByType(IterableService);
 
   if (!remainder || !remainder.trim()) {
-    agent.errorLine(help);
+    agent.errorMessage(help);
     return;
   }
 
   // Parse: @iterable-name "prompt" or @iterable-name prompt
   const trimmed = remainder.trim();
   if (!trimmed.startsWith('@')) {
-    agent.errorLine("Usage: /foreach @<iterable> <prompt>");
+    agent.errorMessage("Usage: /foreach @<iterable> <prompt>");
     return;
   }
 
   const firstSpace = trimmed.indexOf(' ');
   if (firstSpace === -1) {
-    agent.errorLine("Usage: /foreach @<iterable> <prompt>");
+    agent.errorMessage("Usage: /foreach @<iterable> <prompt>");
     return;
   }
 
@@ -31,7 +31,7 @@ async function execute(remainder: string, agent: Agent) {
   const prompt = trimmed.substring(firstSpace + 1).trim().replace(/^["']|["']$/g, '');
 
   if (!prompt) {
-    agent.errorLine("Usage: /foreach @<iterable> <prompt>");
+    agent.errorMessage("Usage: /foreach @<iterable> <prompt>");
     return;
   }
 
@@ -41,7 +41,7 @@ async function execute(remainder: string, agent: Agent) {
     let count = 0;
     for await (const item of iterableService.generate(iterableName, agent)) {
       count++;
-      agent.infoLine(`Processing item ${count}...`);
+      agent.infoMessage(`Processing item ${count}...`);
 
       const interpolatedPrompt = interpolate(prompt, item.variables);
 
@@ -51,13 +51,13 @@ async function execute(remainder: string, agent: Agent) {
       try {
         await runChat(interpolatedPrompt, chatConfig, agent);
       } catch (error) {
-        agent.errorLine(`Error processing item ${count}: ${error}`);
+        agent.errorMessage(`Error processing item ${count}: ${error}`);
       }
 
       agent.restoreState(checkpoint.state);
     }
 
-    agent.infoLine(`Processed ${count} items`);
+    agent.infoMessage(`Processed ${count} items`);
   } finally {
     agent.restoreState(checkpoint.state);
   }
