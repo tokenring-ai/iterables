@@ -1,5 +1,6 @@
 import {ResetWhat} from "@tokenring-ai/agent/AgentEvents";
 import type {AgentStateSlice} from "@tokenring-ai/agent/types";
+import {z} from "zod";
 import {IterableSpec} from "../IterableProvider.ts";
 
 export interface StoredIterable {
@@ -10,8 +11,19 @@ export interface StoredIterable {
   updatedAt: Date;
 }
 
-export class IterableState implements AgentStateSlice {
+const serializationSchema = z.object({
+  iterables: z.array(z.object({
+    name: z.string(),
+    type: z.string(),
+    spec: z.any(),
+    createdAt: z.date(),
+    updatedAt: z.date()
+  }))
+});
+
+export class IterableState implements AgentStateSlice<typeof serializationSchema> {
   name = "IterableState";
+  serializationSchema = serializationSchema;
   iterables: Map<string, StoredIterable> = new Map();
 
   constructor({iterables = []}: { iterables?: StoredIterable[] } = {}) {
@@ -22,13 +34,13 @@ export class IterableState implements AgentStateSlice {
     // Iterables persist across resets
   }
 
-  serialize(): object {
+  serialize(): z.output<typeof serializationSchema> {
     return {
       iterables: Array.from(this.iterables.values()),
     };
   }
 
-  deserialize(data: any): void {
+  deserialize(data: z.output<typeof serializationSchema>): void {
     this.iterables = new Map(
       (data.iterables || []).map((i: any) => [
         i.name,
