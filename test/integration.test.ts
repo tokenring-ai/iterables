@@ -163,7 +163,7 @@ describe('Integration Tests', () => {
 
     it('should handle error scenarios gracefully', async () => {
       service.registerProvider('file', fileProvider);
-      await service.attach(agent);
+      service.attach(agent);
 
       // Try to generate non-existent iterable
       await expect(async () => {
@@ -320,6 +320,7 @@ describe('Integration Tests', () => {
       service.registerProvider('failing', failingProvider);
 
       // Update the iterable to use failing provider
+      // noinspection ES6MissingAwait
       service.define('failing', 'failing', {},  agent);
 
       let errorCaught = false;
