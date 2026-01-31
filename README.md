@@ -35,6 +35,22 @@ pkg/iterables/
 └── LICENSE
 ```
 
+## Exports
+
+The package exports the following:
+
+```typescript
+// Main service
+import IterableService from '@tokenring-ai/iterables';
+
+// Type definitions
+import type {
+  IterableProvider,
+  IterableItem,
+  IterableSpec
+} from '@tokenring-ai/iterables';
+```
+
 ## Core Components
 
 ### IterableService
@@ -48,6 +64,8 @@ class IterableService implements TokenRingService {
 
   registerProvider(provider: IterableProvider): void;
   getProvider(type: string): IterableProvider | undefined;
+
+  attach(agent: Agent): void;
 
   async define(name: string, type: string, spec: IterableSpec, agent: Agent): Promise<void>;
   get(name: string, agent: Agent): StoredIterable | undefined;
@@ -111,14 +129,18 @@ interface StoredIterable {
 State management class:
 
 ```typescript
-class IterableState implements AgentStateSlice {
+class IterableState implements AgentStateSlice<typeof serializationSchema> {
   name = "IterableState";
+  serializationSchema = serializationSchema;
   iterables: Map<string, StoredIterable> = new Map();
 
   constructor({iterables = []}: { iterables?: StoredIterable[] } = {});
+
   reset(what: ResetWhat[]): void;
-  serialize(): object;
-  deserialize(data: any): void;
+  // Iterables persist across resets
+
+  serialize(): z.output<typeof serializationSchema>;
+  deserialize(data: z.output<typeof serializationSchema>): void;
   show(): string[];
 }
 ```
@@ -199,9 +221,9 @@ export default class MyIterableProvider implements IterableProvider {
   getArgsConfig() {
     return {
       options: {
-        param1: {type: 'string' as const},
-        param2: {type: 'boolean' as const},
-        param3: {type: 'string' as const, multiple: true}
+        param1: {type: 'string'},
+        param2: {type: 'boolean'},
+        param3: {type: 'string', multiple: true}
       }
     };
   }
@@ -269,13 +291,13 @@ getArgsConfig() {
   return {
     options: {
       // String argument
-      name: {type: 'string' as const},
+      name: {type: 'string'},
 
       // Boolean flag
-      enabled: {type: 'boolean' as const},
+      enabled: {type: 'boolean'},
 
       // Multiple values
-      tags: {type: 'string' as const, multiple: true}
+      tags: {type: 'string', multiple: true}
     }
   };
 }
@@ -306,8 +328,8 @@ export default class SqlIterableProvider implements IterableProvider {
   getArgsConfig() {
     return {
       options: {
-        query: {type: 'string' as const},
-        database: {type: 'string' as const}
+        query: {type: 'string'},
+        database: {type: 'string'}
       }
     };
   }
@@ -338,41 +360,6 @@ Usage:
 ```bash
 /iterable define users --type sql --query "SELECT * FROM users WHERE active=1"
 /foreach @users "Send email to {email} for user {name}"
-```
-
-## API Reference
-
-### IterableService
-
-```typescript
-class IterableService implements TokenRingService {
-  name = "IterableService";
-  description = "Manages named iterables for batch operations";
-
-  registerProvider(provider: IterableProvider): void;
-  getProvider(type: string): IterableProvider | undefined;
-
-  async define(name: string, type: string, spec: IterableSpec, agent: Agent): Promise<void>;
-  get(name: string, agent: Agent): StoredIterable | undefined;
-  list(agent: Agent): StoredIterable[];
-  delete(name: string, agent: Agent): boolean;
-  async* generate(name: string, agent: Agent): AsyncGenerator<IterableItem>;
-}
-```
-
-### IterableState
-
-```typescript
-class IterableState implements AgentStateSlice {
-  name = "IterableState";
-  iterables: Map<string, StoredIterable> = new Map();
-
-  constructor({iterables = []}: { iterables?: StoredIterable[] } = {});
-  reset(what: ResetWhat[]): void;
-  serialize(): object;
-  deserialize(data: any): void;
-  show(): string[];
-}
 ```
 
 ## Commands
@@ -424,6 +411,18 @@ Process each item in an iterable:
   # Access nested properties with fallback
 ```
 
+### Command Help
+
+Run `/iterable` or `/foreach` without arguments to see detailed help:
+
+```
+/iterable
+# Shows usage information and examples
+
+/foreach
+# Shows prompt template variables and common use cases
+```
+
 ## Plugin Configuration
 
 The iterables plugin uses a minimal configuration schema:
@@ -454,8 +453,9 @@ app.use(iterablesPlugin);
 ### State Management
 
 - **IterableState** persists iterable definitions across agent sessions
-- Iterables are not reset when the agent is reset
+- Iterables are not reset when the agent is reset (they persist across resets)
 - State serialization includes all stored iterables with creation/modification timestamps
+- The state uses Zod schema for type-safe serialization/deserialization
 
 ## Development
 
@@ -501,6 +501,7 @@ The package provides comprehensive error handling:
 - **Invalid spec**: Validates provider arguments before definition
 - **Iterable not found**: Clear error when referencing non-existent iterables
 - **Processing errors**: Individual item errors don't stop batch processing
+- **State errors**: Proper serialization/deserialization with type checking
 
 ## Performance Considerations
 
@@ -508,6 +509,7 @@ The package provides comprehensive error handling:
 - **State checkpoints**: Maintains state between iterations for consistency
 - **Error isolation**: Errors in one item don't affect others
 - **Provider efficiency**: Providers should implement efficient data access patterns
+- **Persistence**: Iterables are persisted across agent resets
 
 ## License
 
