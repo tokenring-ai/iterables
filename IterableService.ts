@@ -6,7 +6,7 @@ import type {IterableItem, IterableProvider, IterableSpec} from "./IterableProvi
 import {IterableState, StoredIterable} from "./state/iterableState.ts";
 
 export default class IterableService implements TokenRingService {
-  name = "IterableService";
+  readonly name = "IterableService";
   description = "Manages named iterables for batch operations";
 
   private providers = new KeyedRegistry<IterableProvider>();

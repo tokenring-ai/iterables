@@ -53,15 +53,8 @@ describe('Iterable Commands', () => {
       const mockProvider = {
         type: 'test',
         description: 'Test provider',
-        getArgsConfig: () => ({ options: { count: { type: 'string' } } })
       };
       iterableService.registerProvider('test', mockProvider);
-      
-      // Mock parseArgs to return proper structure
-      const parseArgsMock = vi.fn().mockReturnValue({
-        values: { type: 'test', count: '5' },
-        positionals: []
-      });
 
       vi.spyOn(iterableService, 'define');
       vi.spyOn(agent, 'infoMessage');
