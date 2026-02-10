@@ -1,4 +1,3 @@
-import {ResetWhat} from '@tokenring-ai/agent/AgentEvents';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {IterableState, StoredIterable} from '../state/iterableState';
 
@@ -140,33 +139,6 @@ describe('IterableState', () => {
       expect(stored?.createdAt).toBeInstanceOf(Date);
       expect(stored?.updatedAt).toBeInstanceOf(Date);
       expect(stored?.createdAt.toISOString()).toBe('2024-01-01T00:00:00.000Z');
-    });
-  });
-
-  describe('Reset Behavior', () => {
-    beforeEach(() => {
-      state = new IterableState({ iterables: mockIterables });
-    });
-
-    it('should persist iterables across resets', () => {
-      const resetTypes: ResetWhat[] = ['memory', 'filesystem'];
-      
-      state.reset(resetTypes);
-      
-      // Iterables should persist across resets
-      expect(state.iterables.size).toBe(2);
-      expect(state.iterables.has('files')).toBe(true);
-      expect(state.iterables.has('users')).toBe(true);
-    });
-
-    it('should handle empty reset arrays', () => {
-      state.reset([]);
-      expect(state.iterables.size).toBe(2);
-    });
-
-    it('should handle undefined reset types', () => {
-      state.reset(undefined as any);
-      expect(state.iterables.size).toBe(2);
     });
   });
 

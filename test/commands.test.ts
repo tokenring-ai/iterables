@@ -99,8 +99,8 @@ describe('Iterable Commands', () => {
       iterableService.define('item2', 'static2', {}, agent);
 
       commands.iterable.execute('list', agent);
-      
-      expect(agent.infoMessage).toHaveBeenCalledWith('Available iterables:\n  @item1 = static\n  @item2 = static2');
+
+      expect(agent.infoMessage).toHaveBeenCalledWith('Available iterables:\n - @item1 = static\n - @item2 = static2');
     });
 
     it('should show message when no iterables defined', () => {
