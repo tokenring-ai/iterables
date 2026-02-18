@@ -47,7 +47,8 @@ import IterableService from '@tokenring-ai/iterables';
 import type {
   IterableProvider,
   IterableItem,
-  IterableSpec
+  IterableSpec,
+  IterableMetadata
 } from '@tokenring-ai/iterables';
 ```
 
@@ -59,7 +60,7 @@ The core service that manages providers and iterable definitions:
 
 ```typescript
 class IterableService implements TokenRingService {
-  name = "IterableService";
+  readonly name = "IterableService";
   description = "Manages named iterables for batch operations";
 
   registerProvider(provider: IterableProvider): void;
@@ -110,6 +111,20 @@ interface IterableSpec {
 }
 ```
 
+### IterableMetadata
+
+Metadata for an iterable:
+
+```typescript
+interface IterableMetadata {
+  name: string;
+  type: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
 ### StoredIterable
 
 Stored iterable definitions:
@@ -130,14 +145,11 @@ State management class:
 
 ```typescript
 class IterableState implements AgentStateSlice<typeof serializationSchema> {
-  name = "IterableState";
+  readonly name = "IterableState";
   serializationSchema = serializationSchema;
   iterables: Map<string, StoredIterable> = new Map();
 
   constructor({iterables = []}: { iterables?: StoredIterable[] } = {});
-
-  reset(what: ResetWhat[]): void;
-  // Iterables persist across resets
 
   serialize(): z.output<typeof serializationSchema>;
   deserialize(data: z.output<typeof serializationSchema>): void;
