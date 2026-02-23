@@ -1,38 +1,35 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
+import {CommandFailedError} from "@tokenring-ai/agent/AgentError";
 import {ChatService} from "@tokenring-ai/chat";
 import runChat from "@tokenring-ai/chat/runChat";
 import IterableService from "../IterableService.ts";
 
 const description = "/foreach - Run a prompt on each item in an iterable";
 
-async function execute(remainder: string, agent: Agent) {
+async function execute(remainder: string, agent: Agent): Promise<string> {
   const iterableService = agent.requireServiceByType(IterableService);
 
   if (!remainder || !remainder.trim()) {
-    agent.errorMessage(help);
-    return;
+    throw new CommandFailedError(help);
   }
 
   // Parse: @iterable-name "prompt" or @iterable-name prompt
   const trimmed = remainder.trim();
   if (!trimmed.startsWith('@')) {
-    agent.errorMessage("Usage: /foreach @<iterable> <prompt>");
-    return;
+    throw new CommandFailedError("Usage: /foreach @<iterable> <prompt>");
   }
 
   const firstSpace = trimmed.indexOf(' ');
   if (firstSpace === -1) {
-    agent.errorMessage("Usage: /foreach @<iterable> <prompt>");
-    return;
+    throw new CommandFailedError("Usage: /foreach @<iterable> <prompt>");
   }
 
   const iterableName = trimmed.substring(1, firstSpace);
-  const prompt = trimmed.substring(firstSpace + 1).trim().replace(/^["']|["']$/g, '');
+  const prompt = trimmed.substring(firstSpace + 1).trim().replace(/^[\"']|[\"']$/g, '');
 
   if (!prompt) {
-    agent.errorMessage("Usage: /foreach @<iterable> <prompt>");
-    return;
+    throw new CommandFailedError("Usage: /foreach @<iterable> <prompt>");
   }
 
   const checkpoint = agent.generateCheckpoint();
@@ -41,7 +38,6 @@ async function execute(remainder: string, agent: Agent) {
     let count = 0;
     for await (const item of iterableService.generate(iterableName, agent)) {
       count++;
-      agent.infoMessage(`Processing item ${count}...`);
 
       const interpolatedPrompt = interpolate(prompt, item.variables);
 
@@ -51,20 +47,20 @@ async function execute(remainder: string, agent: Agent) {
       try {
         await runChat(interpolatedPrompt, chatConfig, agent);
       } catch (error) {
-        agent.errorMessage(`Error processing item ${count}: ${error}`);
+        throw new CommandFailedError(`Error processing item ${count}: ${error}`);
       }
 
       agent.restoreState(checkpoint.state);
     }
 
-    agent.infoMessage(`Processed ${count} items`);
+    return `Processed ${count} items`;
   } finally {
     agent.restoreState(checkpoint.state);
   }
 }
 
 function interpolate(template: string, variables: Record<string, any>): string {
-  return template.replace(/\{([^}:]+)(?::([^}]*))?\}/g, (match, key, defaultValue) => {
+  return template.replace(/\{([^}:]+)(?::([^}]*))?}/g, (match, key, defaultValue) => {
     const value = getNestedProperty(variables, key);
     return value !== undefined ? String(value) : (defaultValue || match);
   });

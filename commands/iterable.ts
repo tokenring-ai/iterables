@@ -1,5 +1,6 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
+import {CommandFailedError} from "@tokenring-ai/agent/AgentError";
 import createSubcommandRouter from "@tokenring-ai/agent/util/subcommandRouter";
 import markdownList from "@tokenring-ai/utility/string/markdownList";
 import {parseArgs} from "node:util";
@@ -7,14 +8,13 @@ import IterableService from "../IterableService.ts";
 
 const description = "/iterable - Manage named iterables";
 
-async function define(remainder: string, agent: Agent) {
+async function define(remainder: string, agent: Agent): Promise<string> {
   const iterableService = agent.requireServiceByType(IterableService);
   const parts = remainder.trim().split(/\s+/);
   const name = parts[0];
 
   if (!name || name.startsWith('--')) {
-    agent.errorMessage("Usage: /iterable define <name> --type <type> [options]");
-    return;
+    throw new CommandFailedError("Usage: /iterable define <name> --type <type> [options]");
   }
 
   const args = parseArgs({
@@ -28,14 +28,12 @@ async function define(remainder: string, agent: Agent) {
 
   const type = args.values.type;
   if (typeof type !== 'string') {
-    agent.errorMessage("Usage: /iterable define <name> --type <type> [options]");
-    return;
+    throw new CommandFailedError("Usage: /iterable define <name> --type <type> [options]");
   }
 
   const provider = iterableService.getProvider(type);
   if (!provider) {
-    agent.errorMessage(`Unknown iterable type: ${type}`);
-    return;
+    throw new CommandFailedError(`Unknown iterable type: ${type}`);
   }
 
   const providerConfig = provider.getArgsConfig();
@@ -56,18 +54,17 @@ async function define(remainder: string, agent: Agent) {
 
   try {
     await iterableService.define(name, type, spec, agent);
-    agent.infoMessage(`Defined iterable: @${name} (${type})`);
+    return `Defined iterable: @${name} (${type})`;
   } catch (error) {
-    agent.errorMessage(`Failed to define iterable: ${error}`);
+    throw new CommandFailedError(`Failed to define iterable: ${error}`);
   }
 }
 
-async function list(remainder: string, agent: Agent) {
+async function list(remainder: string, agent: Agent): Promise<string> {
   const iterableService = agent.requireServiceByType(IterableService);
   const iterables = iterableService.list(agent);
   if (iterables.length === 0) {
-    agent.infoMessage("No iterables defined");
-    return;
+    return "No iterables defined";
   }
 
   const iterableItems = iterables.map(it => `@${it.name} = ${it.type}`);
@@ -75,21 +72,19 @@ async function list(remainder: string, agent: Agent) {
     "Available iterables:",
     markdownList(iterableItems)
   ];
-  agent.infoMessage(lines.join("\n"));
+  return lines.join("\n");
 }
 
-async function show(remainder: string, agent: Agent) {
+async function show(remainder: string, agent: Agent): Promise<string> {
   const iterableService = agent.requireServiceByType(IterableService);
   const name = remainder.trim().split(/\s+/)[0];
   if (!name) {
-    agent.errorMessage("Usage: /iterable show <name>");
-    return;
+    throw new CommandFailedError("Usage: /iterable show <name>");
   }
 
   const iterable = iterableService.get(name, agent);
   if (!iterable) {
-    agent.errorMessage(`Iterable not found: @${name}`);
-    return;
+    throw new CommandFailedError(`Iterable not found: @${name}`);
   }
 
   const lines: string[] = [];
@@ -98,22 +93,21 @@ async function show(remainder: string, agent: Agent) {
   lines.push(`Spec: ${JSON.stringify(iterable.spec, null, 2)}`);
   lines.push(`Created: ${iterable.createdAt.toISOString()}`);
   lines.push(`Updated: ${iterable.updatedAt.toISOString()}`);
-  agent.infoMessage(lines.join("\n"));
+  return lines.join("\n");
 }
 
-async function deleteIterable(remainder: string, agent: Agent) {
+async function deleteIterable(remainder: string, agent: Agent): Promise<string> {
   const iterableService = agent.requireServiceByType(IterableService);
   const name = remainder.trim().split(/\s+/)[0];
   if (!name) {
-    agent.errorMessage("Usage: /iterable delete <name>");
-    return;
+    throw new CommandFailedError("Usage: /iterable delete <name>");
   }
 
   const deleted = iterableService.delete(name, agent);
   if (deleted) {
-    agent.infoMessage(`Deleted iterable: @${name}`);
+    return `Deleted iterable: @${name}`;
   } else {
-    agent.errorMessage(`Iterable not found: @${name}`);
+    throw new CommandFailedError(`Iterable not found: @${name}`);
   }
 }
 
