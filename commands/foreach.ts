@@ -45,7 +45,7 @@ async function execute(remainder: string, agent: Agent): Promise<string> {
       const chatConfig = chatService.getChatConfig(agent);
 
       try {
-        await runChat(interpolatedPrompt, chatConfig, agent);
+        await runChat({ input: interpolatedPrompt, chatConfig, agent});
       } catch (error) {
         throw new CommandFailedError(`Error processing item ${count}: ${error}`);
       }
