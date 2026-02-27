@@ -115,6 +115,7 @@ Process each item in an iterable with a custom prompt
 **Note:** The command maintains checkpoint state between iterations and restores it after processing each item.`;
 
 export default {
+  name: "foreach",
   description,
   execute,
   help,

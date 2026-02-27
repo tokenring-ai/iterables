@@ -167,6 +167,7 @@ const execute = createSubcommandRouter({
 });
 
 export default {
+  name: "iterable",
   description,
   execute,
   help,
