@@ -26,12 +26,16 @@ pkg/iterables/
 ├── plugin.ts                # Plugin definition for TokenRing integration
 ├── IterableService.ts       # Core service implementation
 ├── IterableProvider.ts      # Provider interface and types
+├── commands.ts              # Command exports
 ├── state/
 │   └── iterableState.ts     # State management for iterables
 ├── commands/
-│   ├── iterable.ts          # /iterable command implementation
-│   └── foreach.ts           # /foreach command implementation
-├── chatCommands.ts          # Command exports
+│   ├── foreach.ts           # /foreach command implementation
+│   └── iterable/
+│       ├── define.ts        # /iterable define command
+│       ├── list.ts          # /iterable list command
+│       ├── show.ts          # /iterable show command
+│       └── delete.ts        # /iterable delete command
 └── LICENSE
 ```
 
@@ -76,6 +80,17 @@ class IterableService implements TokenRingService {
 }
 ```
 
+**Methods:**
+
+- `registerProvider(provider)`: Register a new iterable provider
+- `getProvider(type)`: Get a provider by type name
+- `attach(agent)`: Initialize the service with an agent
+- `define(name, type, spec, agent)`: Define a new named iterable
+- `get(name, agent)`: Get a stored iterable by name
+- `list(agent)`: List all defined iterables
+- `delete(name, agent)`: Delete an iterable by name
+- `generate(name, agent)`: Generate items from an iterable
+
 ### IterableProvider Interface
 
 All iterable providers must implement this interface:
@@ -90,6 +105,16 @@ interface IterableProvider {
 }
 ```
 
+**Properties:**
+
+- `type`: Unique identifier for the provider type
+- `description`: Human-readable description of the provider
+
+**Methods:**
+
+- `getArgsConfig()`: Return configuration for accepted arguments
+- `generate(spec, agent)`: Generate items from the specification
+
 ### IterableItem
 
 Items yielded by providers:
@@ -100,6 +125,11 @@ interface IterableItem {
   variables: Record<string, any>;
 }
 ```
+
+**Properties:**
+
+- `value`: The raw item data
+- `variables`: Object containing properties for prompt interpolation
 
 ### IterableSpec
 
@@ -139,6 +169,14 @@ interface StoredIterable {
 }
 ```
 
+**Properties:**
+
+- `name`: Unique identifier for the iterable
+- `type`: Provider type used to generate items
+- `spec`: Configuration parameters for the iterable
+- `createdAt`: Timestamp when the iterable was created
+- `updatedAt`: Timestamp when the iterable was last updated
+
 ### IterableState
 
 State management class:
@@ -156,6 +194,12 @@ class IterableState implements AgentStateSlice<typeof serializationSchema> {
   show(): string[];
 }
 ```
+
+**Methods:**
+
+- `serialize()`: Convert state to serializable format
+- `deserialize(data)`: Restore state from serialized data
+- `show()`: Return human-readable state representation
 
 ## Usage
 
@@ -394,6 +438,13 @@ Manage named iterables:
 /iterable delete <name>
 ```
 
+**Subcommands:**
+
+- `define <name> --type <type> [options]` - Create a new iterable
+- `list` - List all defined iterables
+- `show <name>` - Show details of an iterable
+- `delete <name>` - Delete an iterable
+
 ### /foreach Command
 
 Process each item in an iterable:
@@ -469,15 +520,32 @@ app.use(iterablesPlugin);
 - State serialization includes all stored iterables with creation/modification timestamps
 - The state uses Zod schema for type-safe serialization/deserialization
 
-## Development
+## Testing
 
-### Testing
-
-The package includes Vitest configuration for testing:
+The package includes comprehensive test coverage using Vitest:
 
 ```bash
+# Run all tests
 bun run test
+
+# Run tests in watch mode
+bun run test:watch
+
+# Generate coverage report
+bun run test:coverage
+
+# Type check
+bun run build
 ```
+
+### Test Files
+
+- `test/IterableState.test.ts` - State management tests
+- `test/IterableProvider.test.ts` - Provider interface tests
+- `test/commands.test.ts` - Command execution tests
+- `test/integration.test.ts` - Integration tests
+
+## Development
 
 ### Building
 
@@ -515,6 +583,29 @@ The package provides comprehensive error handling:
 - **Processing errors**: Individual item errors don't stop batch processing
 - **State errors**: Proper serialization/deserialization with type checking
 
+### Error Types
+
+- `CommandFailedError`: Thrown when command execution fails
+- `Error`: Generic errors for unknown providers, missing iterables, etc.
+
+### Error Handling Examples
+
+```typescript
+try {
+  await iterableService.define('test', 'unknown', {}, agent);
+} catch (error) {
+  console.error(error.message); // "Unknown iterable type: unknown"
+}
+
+try {
+  for await (const item of iterableService.generate('nonexistent', agent)) {
+    // ...
+  }
+} catch (error) {
+  console.error(error.message); // "Iterable not found: nonexistent"
+}
+```
+
 ## Performance Considerations
 
 - **Streaming processing**: Items are processed one at a time to minimize memory usage
@@ -522,6 +613,14 @@ The package provides comprehensive error handling:
 - **Error isolation**: Errors in one item don't affect others
 - **Provider efficiency**: Providers should implement efficient data access patterns
 - **Persistence**: Iterables are persisted across agent resets
+
+## Dependencies
+
+- `@tokenring-ai/app` - Base application framework
+- `@tokenring-ai/agent` - Agent orchestration
+- `@tokenring-ai/chat` - Chat service integration
+- `@tokenring-ai/utility` - Shared utilities
+- `zod` - Schema validation
 
 ## License
 
