@@ -4,19 +4,33 @@
 
 The `@tokenring-ai/iterables` package provides a pluggable system for defining and using named iterables in TokenRing. Iterables are reusable data sources that can be used with the `/foreach` command to batch process items across various data types and sources.
 
+This package implements a provider-based architecture where different iterable types can be registered to handle various data sources (files, JSON, CSV, APIs, database queries, etc.). It integrates seamlessly with the Token Ring agent system to provide state persistence and checkpoint recovery during batch operations.
+
 ## Installation
 
 ```bash
 bun install @tokenring-ai/iterables
 ```
 
+## Features
+
+- **Named Iterable Management**: Define, list, show, and delete named iterables with persistent state
+- **Provider Architecture**: Register custom iterable providers for different data sources
+- **Chat Commands**: `/iterable` and `/foreach` commands for managing and processing iterables
+- **Template Interpolation**: Support for variable interpolation in prompts using `{variable}` syntax
+- **State Persistence**: Iterables are persisted across sessions using the agent's state system
+- **Checkpoint Recovery**: Automatic checkpoint creation and restoration during batch processing
+- **Error Handling**: Graceful error handling with recovery during batch operations
+- **Streaming Processing**: Items are processed one at a time to minimize memory usage
+
 ## Key Concepts
 
-- **Iterable**: A named, reusable data source (e.g., file globs, database queries, API results)
+- **Iterable**: A named, reusable data source (e.g., file globs, database queries, API results, JSON files)
 - **Provider**: A plugin that defines how to generate items from a specific type of iterable
 - **Spec**: Configuration parameters for an iterable instance
 - **IterableService**: Core service that manages providers and iterable definitions
 - **IterableState**: Persists iterable definitions across agent sessions
+- **Checkpoint Recovery**: Automatic state restoration between batch processing iterations
 
 ## Package Structure
 
@@ -36,7 +50,14 @@ pkg/iterables/
 │       ├── list.ts          # /iterable list command
 │       ├── show.ts          # /iterable show command
 │       └── delete.ts        # /iterable delete command
-└── LICENSE
+├── test/                    # Test files
+│   ├── commands.test.ts
+│   ├── integration.test.ts
+│   ├── IterableProvider.test.ts
+│   └── IterableState.test.ts
+├── vitest.config.ts         # Test configuration
+├── package.json             # Package metadata and dependencies
+└── README.md                # This documentation
 ```
 
 ## Exports
@@ -56,7 +77,7 @@ import type {
 } from '@tokenring-ai/iterables';
 ```
 
-## Core Components
+## Core Components/API
 
 ### IterableService
 
@@ -67,15 +88,20 @@ class IterableService implements TokenRingService {
   readonly name = "IterableService";
   description = "Manages named iterables for batch operations";
 
+  // Provider registry
   registerProvider(provider: IterableProvider): void;
   getProvider(type: string): IterableProvider | undefined;
 
+  // Agent attachment
   attach(agent: Agent): void;
 
+  // Iterable management
   async define(name: string, type: string, spec: IterableSpec, agent: Agent): Promise<void>;
   get(name: string, agent: Agent): StoredIterable | undefined;
   list(agent: Agent): StoredIterable[];
   delete(name: string, agent: Agent): boolean;
+
+  // Item generation
   async* generate(name: string, agent: Agent): AsyncGenerator<IterableItem>;
 }
 ```
@@ -84,12 +110,12 @@ class IterableService implements TokenRingService {
 
 - `registerProvider(provider)`: Register a new iterable provider
 - `getProvider(type)`: Get a provider by type name
-- `attach(agent)`: Initialize the service with an agent
+- `attach(agent)`: Initialize the service with an agent (registers IterableState)
 - `define(name, type, spec, agent)`: Define a new named iterable
 - `get(name, agent)`: Get a stored iterable by name
 - `list(agent)`: List all defined iterables
 - `delete(name, agent)`: Delete an iterable by name
-- `generate(name, agent)`: Generate items from an iterable
+- `generate(name, agent)`: Generate items from an iterable (async generator)
 
 ### IterableProvider Interface
 
@@ -201,7 +227,7 @@ class IterableState implements AgentStateSlice<typeof serializationSchema> {
 - `deserialize(data)`: Restore state from serialized data
 - `show()`: Return human-readable state representation
 
-## Usage
+## Usage Examples
 
 ### Defining Iterables
 
@@ -240,30 +266,9 @@ Use the `/foreach` command with the `@` prefix:
 /iterable delete ts-files
 ```
 
-## Variable Interpolation
+### Creating Custom Providers
 
-In `/foreach` prompts, use `{variable}` syntax to access item properties:
-
-```bash
-/foreach @ts-files "File: {file}, Size: {size} bytes, Modified: {modified}"
-```
-
-Available variables depend on the provider type. The system supports nested property access using dot notation:
-
-```bash
-/foreach @data "Process {nested.value:default}"
-```
-
-### Interpolation Features
-
-- **Simple variables**: `{variable}`
-- **Default values**: `{variable:default}`
-- **Nested properties**: `{user.name}`
-- **Mixed**: `{nested.value:fallback}`
-
-## Creating Custom Providers
-
-### 1. Implement the IterableProvider Interface
+#### 1. Implement the IterableProvider Interface
 
 ```typescript
 import Agent from "@tokenring-ai/agent/Agent";
@@ -312,7 +317,7 @@ export default class MyIterableProvider implements IterableProvider {
 }
 ```
 
-### 2. Register the Provider
+#### 2. Register the Provider
 
 In your service's `attach()` method:
 
@@ -329,52 +334,14 @@ async attach(agent: Agent): Promise<void> {
 }
 ```
 
-### 3. Use Your Provider
+#### 3. Use Your Provider
 
 ```bash
 /iterable define my-items --type mytype --param1 "value" --param2
 /foreach @my-items "Process {name} with ID {id}"
 ```
 
-## Provider Guidelines
-
-### getArgsConfig()
-
-Return an object with `options` defining accepted arguments:
-
-```typescript
-getArgsConfig() {
-  return {
-    options: {
-      // String argument
-      name: {type: 'string'},
-
-      // Boolean flag
-      enabled: {type: 'boolean'},
-
-      // Multiple values
-      tags: {type: 'string', multiple: true}
-    }
-  };
-}
-```
-
-### generate()
-
-- Return an `AsyncGenerator<IterableItem>`
-- Each item must have `value` and `variables`
-- `value` is the raw item data
-- `variables` are exposed for prompt interpolation
-- Access spec parameters directly: `spec.paramName`
-
-### Variables Best Practices
-
-- Provide intuitive variable names
-- Include both raw and formatted versions (e.g., `{date}` and `{dateFormatted}`)
-- Document available variables in provider description
-- Keep variable names consistent across similar providers
-
-## Example: Database Provider
+### Example: Database Provider
 
 ```typescript
 export default class SqlIterableProvider implements IterableProvider {
@@ -417,6 +384,173 @@ Usage:
 /iterable define users --type sql --query "SELECT * FROM users WHERE active=1"
 /foreach @users "Send email to {email} for user {name}"
 ```
+
+## Configuration
+
+The iterables plugin uses a minimal configuration schema:
+
+```typescript
+import {z} from "zod";
+
+const packageConfigSchema = z.object({});
+```
+
+No configuration is required by default. The plugin automatically:
+1. Registers chat commands (`/iterable` and `/foreach`)
+2. Adds the IterableService to the application
+3. Initializes the IterableState for each agent
+
+## Integration
+
+### Integration with TokenRing
+
+The package integrates with TokenRing as a plugin:
+
+```typescript
+import {TokenRingApp} from "@tokenring-ai/app";
+import iterablesPlugin from "@tokenring-ai/iterables";
+
+const app = new TokenRingApp();
+app.use(iterablesPlugin);
+```
+
+### State Management
+
+- **IterableState** persists iterable definitions across agent sessions
+- Iterables are not reset when the agent is reset (they persist across resets)
+- State serialization includes all stored iterables with creation/modification timestamps
+- The state uses Zod schema for type-safe serialization/deserialization
+
+### Checkpoint Recovery
+
+The `/foreach` command uses checkpoint recovery to ensure consistent state:
+
+```typescript
+const checkpoint = agent.generateCheckpoint();
+
+try {
+  for await (const item of iterableService.generate(iterableName, agent)) {
+    // Process item
+    const interpolatedPrompt = interpolate(prompt, item.variables);
+    await runChat({ input: interpolatedPrompt, chatConfig, agent});
+
+    // Restore state before next iteration
+    agent.restoreState(checkpoint.state);
+  }
+} finally {
+  // Restore final state
+  agent.restoreState(checkpoint.state);
+}
+```
+
+## RPC Endpoints
+
+This package does not define any RPC endpoints.
+
+## State Management
+
+### State Slice
+
+The package uses `IterableState` to persist iterable definitions:
+
+```typescript
+class IterableState implements AgentStateSlice<typeof serializationSchema> {
+  readonly name = "IterableState";
+  serializationSchema = serializationSchema;
+  iterables: Map<string, StoredIterable> = new Map();
+
+  constructor({iterables = []}: { iterables?: StoredIterable[] } = {});
+  serialize(): z.output<typeof serializationSchema>;
+  deserialize(data: z.output<typeof serializationSchema>): void;
+  show(): string[];
+}
+```
+
+### Persistence and Restoration Patterns
+
+- Iterables are persisted across agent sessions
+- State is automatically serialized/deserialized using Zod schema
+- Checkpoint recovery is used during batch operations
+
+### Checkpoint Generation and Recovery
+
+During `/foreach` processing, checkpoints are generated and restored:
+
+```typescript
+const checkpoint = agent.generateCheckpoint();
+
+try {
+  for await (const item of iterableService.generate(iterableName, agent)) {
+    // Process item
+    await processItem(item);
+
+    // Restore state before next iteration
+    agent.restoreState(checkpoint.state);
+  }
+} finally {
+  // Restore final state
+  agent.restoreState(checkpoint.state);
+}
+```
+
+## Variable Interpolation
+
+In `/foreach` prompts, use `{variable}` syntax to access item properties:
+
+```bash
+/foreach @ts-files "File: {file}, Size: {size} bytes, Modified: {modified}"
+```
+
+Available variables depend on the provider type. The system supports nested property access using dot notation:
+
+```bash
+/foreach @data "Process {nested.value:default}"
+```
+
+### Interpolation Features
+
+- **Simple variables**: `{variable}`
+- **Default values**: `{variable:default}`
+- **Nested properties**: `{user.name}`
+- **Mixed**: `{nested.value:fallback}`
+
+## Provider Guidelines
+
+### getArgsConfig()
+
+Return an object with `options` defining accepted arguments:
+
+```typescript
+getArgsConfig() {
+  return {
+    options: {
+      // String argument
+      name: {type: 'string'},
+
+      // Boolean flag
+      enabled: {type: 'boolean'},
+
+      // Multiple values
+      tags: {type: 'string', multiple: true}
+    }
+  };
+}
+```
+
+### generate()
+
+- Return an `AsyncGenerator<IterableItem>`
+- Each item must have `value` and `variables`
+- `value` is the raw item data
+- `variables` are exposed for prompt interpolation
+- Access spec parameters directly: `spec.paramName`
+
+### Variables Best Practices
+
+- Provide intuitive variable names
+- Include both raw and formatted versions (e.g., `{date}` and `{dateFormatted}`)
+- Document available variables in provider description
+- Keep variable names consistent across similar providers
 
 ## Commands
 
@@ -486,85 +620,6 @@ Run `/iterable` or `/foreach` without arguments to see detailed help:
 # Shows prompt template variables and common use cases
 ```
 
-## Plugin Configuration
-
-The iterables plugin uses a minimal configuration schema:
-
-```typescript
-import {z} from "zod";
-
-const packageConfigSchema = z.object({});
-```
-
-No configuration is required by default. The plugin automatically:
-1. Registers chat commands (`/iterable` and `/foreach`)
-2. Adds the IterableService to the application
-3. Initializes the IterableState for each agent
-
-## Integration
-
-The package integrates with TokenRing as a plugin:
-
-```typescript
-import {TokenRingApp} from "@tokenring-ai/app";
-import iterablesPlugin from "@tokenring-ai/iterables";
-
-const app = new TokenRingApp();
-app.use(iterablesPlugin);
-```
-
-### State Management
-
-- **IterableState** persists iterable definitions across agent sessions
-- Iterables are not reset when the agent is reset (they persist across resets)
-- State serialization includes all stored iterables with creation/modification timestamps
-- The state uses Zod schema for type-safe serialization/deserialization
-
-## Testing
-
-The package includes comprehensive test coverage using Vitest:
-
-```bash
-# Run all tests
-bun run test
-
-# Run tests in watch mode
-bun run test:watch
-
-# Generate coverage report
-bun run test:coverage
-
-# Type check
-bun run build
-```
-
-### Test Files
-
-- `test/IterableState.test.ts` - State management tests
-- `test/IterableProvider.test.ts` - Provider interface tests
-- `test/commands.test.ts` - Command execution tests
-- `test/integration.test.ts` - Integration tests
-
-## Development
-
-### Building
-
-```bash
-bun run build
-```
-
-### Watch Mode
-
-```bash
-bun run test:watch
-```
-
-### Coverage
-
-```bash
-bun run test:coverage
-```
-
 ## Common Use Cases
 
 - **Code analysis and refactoring** across multiple files
@@ -614,14 +669,66 @@ try {
 - **Provider efficiency**: Providers should implement efficient data access patterns
 - **Persistence**: Iterables are persisted across agent resets
 
+## Testing
+
+The package includes comprehensive test coverage using Vitest:
+
+```bash
+# Run all tests
+bun run test
+
+# Run tests in watch mode
+bun run test:watch
+
+# Generate coverage report
+bun run test:coverage
+
+# Type check
+bun run build
+```
+
+### Test Files
+
+- `test/IterableState.test.ts` - State management tests
+- `test/IterableProvider.test.ts` - Provider interface tests
+- `test/commands.test.ts` - Command execution tests
+- `test/integration.test.ts` - Integration tests
+
+## Development
+
+### Building
+
+```bash
+bun run build
+```
+
+### Watch Mode
+
+```bash
+bun run test:watch
+```
+
+### Coverage
+
+```bash
+bun run test:coverage
+```
+
 ## Dependencies
 
-- `@tokenring-ai/app` - Base application framework
-- `@tokenring-ai/agent` - Agent orchestration
-- `@tokenring-ai/chat` - Chat service integration
-- `@tokenring-ai/utility` - Shared utilities
-- `zod` - Schema validation
+### Production Dependencies
+
+- `@tokenring-ai/app` (0.2.0) - Base application framework
+- `@tokenring-ai/agent` (0.2.0) - Agent orchestration
+- `@tokenring-ai/chat` (0.2.0) - Chat service integration
+- `@tokenring-ai/utility` (0.2.0) - Shared utilities
+- `zod` (^4.3.6) - Schema validation
+
+### Development Dependencies
+
+- `vitest` (^4.0.18) - Testing framework
+- `typescript` (^5.9.3) - TypeScript compiler
 
 ## License
 
-MIT License - see [LICENSE](./LICENSE) file for details.
+MIT License - see LICENSE file for details.

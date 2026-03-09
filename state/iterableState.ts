@@ -1,4 +1,4 @@
-import type {AgentStateSlice} from "@tokenring-ai/agent/types";
+import {AgentStateSlice} from "@tokenring-ai/agent/types";
 import {z} from "zod";
 import {IterableSpec} from "../IterableProvider.ts";
 
@@ -20,12 +20,11 @@ const serializationSchema = z.object({
   }))
 });
 
-export class IterableState implements AgentStateSlice<typeof serializationSchema> {
-  readonly name = "IterableState";
-  serializationSchema = serializationSchema;
+export class IterableState extends AgentStateSlice<typeof serializationSchema> {
   iterables: Map<string, StoredIterable> = new Map();
 
   constructor({iterables = []}: { iterables?: StoredIterable[] } = {}) {
+    super("IterableState", serializationSchema);
     this.iterables = new Map(iterables.map(i => [i.name, i]));
   }
   serialize(): z.output<typeof serializationSchema> {
