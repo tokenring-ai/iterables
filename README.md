@@ -40,7 +40,7 @@ pkg/iterables/
 ├── plugin.ts                # Plugin definition for TokenRing integration
 ├── IterableService.ts       # Core service implementation
 ├── IterableProvider.ts      # Provider interface and types
-├── commands.ts              # Command exports
+├── commands.ts              # Command exports (array of commands)
 ├── state/
 │   └── iterableState.ts     # State management for iterables
 ├── commands/
@@ -66,7 +66,7 @@ The package exports the following:
 
 ```typescript
 // Main service
-import IterableService from '@tokenring-ai/iterables';
+import IterableService from '@tokenring-ai/iterables/IterableService';
 
 // Type definitions
 import type {
@@ -74,7 +74,13 @@ import type {
   IterableItem,
   IterableSpec,
   IterableMetadata
-} from '@tokenring-ai/iterables';
+} from '@tokenring-ai/iterables/IterableProvider';
+
+// Commands array
+import commands from '@tokenring-ai/iterables/commands';
+
+// Plugin
+import iterablesPlugin from '@tokenring-ai/iterables/plugin';
 ```
 
 ## Core Components/API
@@ -89,8 +95,8 @@ class IterableService implements TokenRingService {
   description = "Manages named iterables for batch operations";
 
   // Provider registry
-  registerProvider(provider: IterableProvider): void;
-  getProvider(type: string): IterableProvider | undefined;
+  registerProvider: (provider: IterableProvider) => void;
+  getProvider: (type: string) => IterableProvider | undefined;
 
   // Agent attachment
   attach(agent: Agent): void;
@@ -108,13 +114,13 @@ class IterableService implements TokenRingService {
 
 **Methods:**
 
-- `registerProvider(provider)`: Register a new iterable provider
-- `getProvider(type)`: Get a provider by type name
+- `registerProvider(provider)`: Register a new iterable provider (bound from KeyedRegistry)
+- `getProvider(type)`: Get a provider by type name (bound from KeyedRegistry)
 - `attach(agent)`: Initialize the service with an agent (registers IterableState)
 - `define(name, type, spec, agent)`: Define a new named iterable
 - `get(name, agent)`: Get a stored iterable by name
 - `list(agent)`: List all defined iterables
-- `delete(name, agent)`: Delete an iterable by name
+- `delete(name, agent)`: Delete an iterable by name (returns false if not found)
 - `generate(name, agent)`: Generate items from an iterable (async generator)
 
 ### IterableProvider Interface
@@ -169,7 +175,7 @@ interface IterableSpec {
 
 ### IterableMetadata
 
-Metadata for an iterable:
+Metadata for an iterable (used for documentation):
 
 ```typescript
 interface IterableMetadata {
@@ -205,10 +211,10 @@ interface StoredIterable {
 
 ### IterableState
 
-State management class:
+State management class that persists iterable definitions:
 
 ```typescript
-class IterableState implements AgentStateSlice<typeof serializationSchema> {
+class IterableState extends AgentStateSlice<typeof serializationSchema> {
   readonly name = "IterableState";
   serializationSchema = serializationSchema;
   iterables: Map<string, StoredIterable> = new Map();
@@ -221,10 +227,24 @@ class IterableState implements AgentStateSlice<typeof serializationSchema> {
 }
 ```
 
+**Serialization Schema:**
+
+```typescript
+const serializationSchema = z.object({
+  iterables: z.array(z.object({
+    name: z.string(),
+    type: z.string(),
+    spec: z.any(),
+    createdAt: z.date(),
+    updatedAt: z.date()
+  }))
+});
+```
+
 **Methods:**
 
 - `serialize()`: Convert state to serializable format
-- `deserialize(data)`: Restore state from serialized data
+- `deserialize(data)`: Restore state from serialized data (converts date strings to Date objects)
 - `show()`: Return human-readable state representation
 
 ## Usage Examples
@@ -234,8 +254,8 @@ class IterableState implements AgentStateSlice<typeof serializationSchema> {
 Use the `/iterable define` command with type-specific arguments:
 
 ```bash
-# Define a glob iterable for TypeScript files
-/iterable define ts-files --type glob --pattern "src/**/*.ts"
+# Define a file iterable for TypeScript files
+/iterable define ts-files --type file --pattern "src/**/*.ts"
 
 # Define a JSON iterable
 /iterable define users --type json --file "users.json"
@@ -325,7 +345,6 @@ In your service's `attach()` method:
 async attach(agent: Agent): Promise<void> {
   // ... other initialization ...
 
-  const {IterableService} = await import("@tokenring-ai/iterables");
   const iterableService = agent.tryServiceByType(IterableService);
   if(iterableService) {
     const MyIterableProvider = (await import("./MyIterableProvider.ts")).default;
@@ -344,6 +363,9 @@ async attach(agent: Agent): Promise<void> {
 ### Example: Database Provider
 
 ```typescript
+import Agent from "@tokenring-ai/agent/Agent";
+import {IterableItem, IterableProvider, IterableSpec} from "@tokenring-ai/iterables";
+
 export default class SqlIterableProvider implements IterableProvider {
   type = "sql";
   description = "Iterate over SQL query results";
@@ -408,10 +430,29 @@ The package integrates with TokenRing as a plugin:
 
 ```typescript
 import {TokenRingApp} from "@tokenring-ai/app";
-import iterablesPlugin from "@tokenring-ai/iterables";
+import iterablesPlugin from "@tokenring-ai/iterables/plugin";
 
 const app = new TokenRingApp();
 app.use(iterablesPlugin);
+```
+
+### Plugin Structure
+
+The plugin is defined as:
+
+```typescript
+export default {
+  name: packageJSON.name,
+  version: packageJSON.version,
+  description: packageJSON.description,
+  install(app, config) {
+    app.waitForService(AgentCommandService, agentCommandService =>
+      agentCommandService.addAgentCommands(agentCommands)
+    );
+    app.addServices(new IterableService());
+  },
+  config: packageConfigSchema
+} satisfies TokenRingPlugin<typeof packageConfigSchema>;
 ```
 
 ### State Management
@@ -454,9 +495,17 @@ This package does not define any RPC endpoints.
 The package uses `IterableState` to persist iterable definitions:
 
 ```typescript
-class IterableState implements AgentStateSlice<typeof serializationSchema> {
+class IterableState extends AgentStateSlice<typeof serializationSchema> {
   readonly name = "IterableState";
-  serializationSchema = serializationSchema;
+  serializationSchema = z.object({
+    iterables: z.array(z.object({
+      name: z.string(),
+      type: z.string(),
+      spec: z.any(),
+      createdAt: z.date(),
+      updatedAt: z.date()
+    }))
+  });
   iterables: Map<string, StoredIterable> = new Map();
 
   constructor({iterables = []}: { iterables?: StoredIterable[] } = {});
@@ -470,6 +519,7 @@ class IterableState implements AgentStateSlice<typeof serializationSchema> {
 
 - Iterables are persisted across agent sessions
 - State is automatically serialized/deserialized using Zod schema
+- Date strings are converted back to Date objects during deserialization
 - Checkpoint recovery is used during batch operations
 
 ### Checkpoint Generation and Recovery
@@ -514,6 +564,23 @@ Available variables depend on the provider type. The system supports nested prop
 - **Nested properties**: `{user.name}`
 - **Mixed**: `{nested.value:fallback}`
 
+### Interpolation Implementation
+
+The interpolation function uses regex to replace variables:
+
+```typescript
+function interpolate(template: string, variables: Record<string, any>): string {
+  return template.replace(/\{([^}:]+)(?::([^}]*))?}/g, (match, key, defaultValue) => {
+    const value = getNestedProperty(variables, key);
+    return value !== undefined ? String(value) : (defaultValue || match);
+  });
+}
+
+function getNestedProperty(obj: any, path: string): any {
+  return path.split('.').reduce((current, prop) => current?.[prop], obj);
+}
+```
+
 ## Provider Guidelines
 
 ### getArgsConfig()
@@ -554,9 +621,22 @@ getArgsConfig() {
 
 ## Commands
 
+The package exports an array of agent commands:
+
+```typescript
+import commands from '@tokenring-ai/iterables/commands';
+
+// Commands array contains:
+// - iterable define
+// - iterable list
+// - iterable show
+// - iterable delete
+// - foreach
+```
+
 ### /iterable Command
 
-Manage named iterables:
+Manage named iterables with subcommands:
 
 ```bash
 # Define a new iterable
@@ -579,6 +659,78 @@ Manage named iterables:
 - `show <name>` - Show details of an iterable
 - `delete <name>` - Delete an iterable
 
+**Command Implementations:**
+
+#### define
+
+```typescript
+async function execute(remainder: string, agent: Agent): Promise<string> {
+  const parts = remainder.trim().split(/\s+/);
+  const name = parts[0];
+  if (!name || name.startsWith('--')) throw new CommandFailedError("Usage: /iterable define <name> --type <type> [options]");
+  
+  const args = parseArgs({ args: parts.slice(1), options: { type: {type: 'string'} }, strict: false, allowPositionals: true });
+  const type = args.values.type;
+  if (typeof type !== 'string') throw new CommandFailedError("Usage: /iterable define <name> --type <type> [options]");
+  
+  const provider = iterableService.getProvider(type);
+  if (!provider) throw new CommandFailedError(`Unknown iterable type: ${type}`);
+  
+  const providerArgs = parseArgs({ args: parts.slice(1), options: { ...provider.getArgsConfig().options }, strict: false });
+  const spec: Record<string, any> = {};
+  for (const [key, value] of Object.entries(providerArgs.values)) {
+    if (key !== 'type') spec[key] = value;
+  }
+  
+  await iterableService.define(name, type, spec, agent);
+  return `Defined iterable: @${name} (${type})`;
+}
+```
+
+#### list
+
+```typescript
+async function execute(_remainder: string, agent: Agent): Promise<string> {
+  const iterables = iterableService.list(agent);
+  if (iterables.length === 0) return "No iterables defined";
+  return `Available iterables:\n${markdownList(iterables.map(it => `@${it.name} = ${it.type}`))}`;
+}
+```
+
+#### show
+
+```typescript
+async function execute(remainder: string, agent: Agent): Promise<string> {
+  const name = remainder.trim().split(/\s+/)[0];
+  if (!name) throw new CommandFailedError("Usage: /iterable show <name>");
+  
+  const iterable = iterableService.get(name, agent);
+  if (!iterable) throw new CommandFailedError(`Iterable not found: @${name}`);
+  
+  return [
+    `Iterable: @${iterable.name}`,
+    `Type: ${iterable.type}`,
+    `Spec: ${JSON.stringify(iterable.spec, null, 2)}`,
+    `Created: ${iterable.createdAt.toISOString()}`,
+    `Updated: ${iterable.updatedAt.toISOString()}`,
+  ].join("\n");
+}
+```
+
+#### delete
+
+```typescript
+async function execute(remainder: string, agent: Agent): Promise<string> {
+  const name = remainder.trim().split(/\s+/)[0];
+  if (!name) throw new CommandFailedError("Usage: /iterable delete <name>");
+  
+  const deleted = iterableService.delete(name, agent);
+  if (!deleted) throw new CommandFailedError(`Iterable not found: @${name}`);
+  
+  return `Deleted iterable: @${name}`;
+}
+```
+
 ### /foreach Command
 
 Process each item in an iterable:
@@ -591,6 +743,61 @@ Process each item in an iterable:
 
 - **@<iterable>** - Name of the iterable to process (prefixed with @)
 - **<prompt>** - Template prompt to execute for each item
+
+#### Implementation
+
+```typescript
+async function execute(remainder: string, agent: Agent): Promise<string> {
+  const iterableService = agent.requireServiceByType(IterableService);
+
+  if (!remainder || !remainder.trim()) {
+    throw new CommandFailedError(help);
+  }
+
+  const trimmed = remainder.trim();
+  if (!trimmed.startsWith('@')) {
+    throw new CommandFailedError("Usage: /foreach @<iterable> <prompt>");
+  }
+
+  const firstSpace = trimmed.indexOf(' ');
+  if (firstSpace === -1) {
+    throw new CommandFailedError("Usage: /foreach @<iterable> <prompt>");
+  }
+
+  const iterableName = trimmed.substring(1, firstSpace);
+  const prompt = trimmed.substring(firstSpace + 1).trim().replace(/^["']|["']$/g, '');
+
+  if (!prompt) {
+    throw new CommandFailedError("Usage: /foreach @<iterable> <prompt>");
+  }
+
+  const checkpoint = agent.generateCheckpoint();
+
+  try {
+    let count = 0;
+    for await (const item of iterableService.generate(iterableName, agent)) {
+      count++;
+
+      const interpolatedPrompt = interpolate(prompt, item.variables);
+
+      const chatService = agent.requireServiceByType(ChatService);
+      const chatConfig = chatService.getChatConfig(agent);
+
+      try {
+        await runChat({ input: interpolatedPrompt, chatConfig, agent});
+      } catch (error) {
+        throw new CommandFailedError(`Error processing item ${count}: ${error}`);
+      }
+
+      agent.restoreState(checkpoint.state);
+    }
+
+    return `Processed ${count} items`;
+  } finally {
+    agent.restoreState(checkpoint.state);
+  }
+}
+```
 
 #### Examples
 
@@ -694,6 +901,32 @@ bun run build
 - `test/commands.test.ts` - Command execution tests
 - `test/integration.test.ts` - Integration tests
 
+### Example Test
+
+```typescript
+import {describe, expect, it} from 'vitest';
+import IterableService from '../IterableService';
+import {IterableState} from '../state/iterableState';
+
+describe('IterableState', () => {
+  it('should serialize state correctly', () => {
+    const state = new IterableState({
+      iterables: [{
+        name: 'files',
+        type: 'file',
+        spec: { pattern: '**/*.ts' },
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }]
+    });
+
+    const serialized = state.serialize();
+    expect(serialized.iterables).toHaveLength(1);
+    expect(serialized.iterables[0].name).toBe('files');
+  });
+});
+```
+
 ## Development
 
 ### Building
@@ -726,7 +959,7 @@ bun run test:coverage
 
 ### Development Dependencies
 
-- `vitest` (^4.0.18) - Testing framework
+- `vitest` (^4.1.0) - Testing framework
 - `typescript` (^5.9.3) - TypeScript compiler
 
 ## License
