@@ -1,11 +1,18 @@
-import Agent from "@tokenring-ai/agent/Agent";
 import {CommandFailedError} from "@tokenring-ai/agent/AgentError";
-import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
+import {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand} from "@tokenring-ai/agent/types";
 import IterableService from "../../IterableService.ts";
 
-async function execute(remainder: string, agent: Agent): Promise<string> {
-  const name = remainder.trim().split(/\s+/)[0];
-  if (!name) throw new CommandFailedError("Usage: /iterable show <name>");
+const inputSchema = {
+  args: {},
+  positionals: [{
+    name: "name",
+    description: "The iterable name to show",
+    required: true,
+  }],
+  allowAttachments: false,
+} as const satisfies AgentCommandInputSchema;
+
+async function execute({positionals: { name }, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   const iterable = agent.requireServiceByType(IterableService).get(name, agent);
   if (!iterable) throw new CommandFailedError(`Iterable not found: @${name}`);
   return [
@@ -20,12 +27,11 @@ async function execute(remainder: string, agent: Agent): Promise<string> {
 export default {
   name: "iterable show",
   description: "Show details of an iterable",
-  help: `# /iterable show <name>
-
-Display detailed information about a specific iterable.
+  inputSchema,
+  execute,
+  help: `Display detailed information about a specific iterable.
 
 ## Example
 
 /iterable show files`,
-  execute,
-} satisfies TokenRingAgentCommand;
+} satisfies TokenRingAgentCommand<typeof inputSchema>;

@@ -1,26 +1,44 @@
-import Agent from "@tokenring-ai/agent/Agent";
 import {CommandFailedError} from "@tokenring-ai/agent/AgentError";
-import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
+import {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand} from "@tokenring-ai/agent/types";
 import {parseArgs} from "node:util";
 import IterableService from "../../IterableService.ts";
 
-async function execute(remainder: string, agent: Agent): Promise<string> {
+const inputSchema = {
+  args: {
+    "--type": {
+      type: "string",
+      required: true,
+      description: "The iterable type",
+    },
+  },
+  positionals: [
+    {
+      name: "name",
+      description: "Name for the iterable",
+      required: true,
+    },
+    {
+      name: "options",
+      description: "Options for the iterable",
+      defaultValue: "",
+      greedy: true
+    }
+  ],
+  allowAttachments: false,
+} as const satisfies AgentCommandInputSchema;
+
+async function execute({positionals: {name, options}, args, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   const iterableService = agent.requireServiceByType(IterableService);
-  const parts = remainder.trim().split(/\s+/);
-  const name = parts[0];
-  if (!name || name.startsWith('--')) throw new CommandFailedError("Usage: /iterable define <name> --type <type> [options]");
-  const args = parseArgs({ args: parts.slice(1), options: { type: {type: 'string'} }, strict: false, allowPositionals: true });
-  const type = args.values.type;
-  if (typeof type !== 'string') throw new CommandFailedError("Usage: /iterable define <name> --type <type> [options]");
+  const type = args['--type']
+
   const provider = iterableService.getProvider(type);
   if (!provider) throw new CommandFailedError(`Unknown iterable type: ${type}`);
-  const providerArgs = parseArgs({ args: parts.slice(1), options: { ...provider.getArgsConfig().options }, strict: false });
-  const spec: Record<string, any> = {};
-  for (const [key, value] of Object.entries(providerArgs.values)) {
-    if (key !== 'type') spec[key] = value;
-  }
+
+  const parts = options.split(/\s+/);
+  const providerArgs = parseArgs({args: parts, options: {...provider.getArgsConfig().options}, strict: false});
+
   try {
-    await iterableService.define(name, type, spec, agent);
+    await iterableService.define(name, type, providerArgs, agent);
     return `Defined iterable: @${name} (${type})`;
   } catch (error) {
     throw new CommandFailedError(`Failed to define iterable: ${error}`);
@@ -29,7 +47,7 @@ async function execute(remainder: string, agent: Agent): Promise<string> {
 
 export default {
   name: "iterable define",
-  description: "Create a new iterable",
+  description: "/iterable define - Create a new iterable",
   help: `# /iterable define <name> --type <type> [options]
 
 Create a new named iterable with the specified type and configuration.
@@ -39,4 +57,5 @@ Create a new named iterable with the specified type and configuration.
 /iterable define files --type file --pattern "**/*.ts"
 /iterable define projects --type json --file "projects.json"`,
   execute,
-} satisfies TokenRingAgentCommand;
+  inputSchema
+} satisfies TokenRingAgentCommand<typeof inputSchema>;
