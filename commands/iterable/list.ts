@@ -11,7 +11,7 @@ async function execute(_remainder: string, agent: Agent): Promise<string> {
 
 export default {
   name: "iterable list",
-  description: "/iterable list - List all defined iterables",
+  description: "List all defined iterables",
   help: `# /iterable list
 
 Show all defined iterables with their types.

@@ -19,7 +19,7 @@ async function execute(remainder: string, agent: Agent): Promise<string> {
 
 export default {
   name: "iterable show",
-  description: "/iterable show - Show details of an iterable",
+  description: "Show details of an iterable",
   help: `# /iterable show <name>
 
 Display detailed information about a specific iterable.

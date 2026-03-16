@@ -13,7 +13,7 @@ async function execute(remainder: string, agent: Agent): Promise<string> {
 
 export default {
   name: "iterable delete",
-  description: "/iterable delete - Delete an iterable",
+  description: "Delete an iterable",
   help: `# /iterable delete <name>
 
 Remove a defined iterable permanently.

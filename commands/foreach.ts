@@ -1,11 +1,11 @@
 import Agent from "@tokenring-ai/agent/Agent";
-import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
 import {CommandFailedError} from "@tokenring-ai/agent/AgentError";
+import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
 import {ChatService} from "@tokenring-ai/chat";
 import runChat from "@tokenring-ai/chat/runChat";
 import IterableService from "../IterableService.ts";
 
-const description = "/foreach - Run a prompt on each item in an iterable";
+const description = "Run a prompt on each item in an iterable";
 
 async function execute(remainder: string, agent: Agent): Promise<string> {
   const iterableService = agent.requireServiceByType(IterableService);

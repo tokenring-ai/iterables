@@ -29,7 +29,7 @@ async function execute(remainder: string, agent: Agent): Promise<string> {
 
 export default {
   name: "iterable define",
-  description: "/iterable define - Create a new iterable",
+  description: "Create a new iterable",
   help: `# /iterable define <name> --type <type> [options]
 
 Create a new named iterable with the specified type and configuration.
