@@ -8,8 +8,7 @@ const inputSchema = {
     name: "name",
     description: "The iterable name to show",
     required: true,
-  }],
-  allowAttachments: false,
+  }]
 } as const satisfies AgentCommandInputSchema;
 
 async function execute({positionals: { name }, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {

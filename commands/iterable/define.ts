@@ -17,24 +17,18 @@ const inputSchema = {
       description: "Name for the iterable",
       required: true,
     },
-    {
-      name: "options",
-      description: "Options for the iterable",
-      defaultValue: "",
-      greedy: true
-    }
   ],
-  allowAttachments: false,
+  remainder: {name: "options", description: "Options for the iterable"}
 } as const satisfies AgentCommandInputSchema;
 
-async function execute({positionals: {name, options}, args, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
+async function execute({positionals: {name}, remainder, args, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   const iterableService = agent.requireServiceByType(IterableService);
   const type = args['--type']
 
   const provider = iterableService.getProvider(type);
   if (!provider) throw new CommandFailedError(`Unknown iterable type: ${type}`);
 
-  const parts = options.split(/\s+/);
+  const parts = remainder?.split(/\s+/) ?? [];
   const providerArgs = parseArgs({args: parts, options: {...provider.getArgsConfig().options}, strict: false});
 
   try {

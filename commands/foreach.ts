@@ -8,20 +8,8 @@ const description = "Run a prompt on each item in an iterable";
 
 const inputSchema = {
   args: {},
-  positionals: [
-    {
-      name: "iterable",
-      description: "@<iterable> name",
-      required: true,
-    },
-    {
-      name: "prompt",
-      description: "Prompt template to run for each item",
-      required: true,
-      greedy: true,
-    },
-  ],
-  allowAttachments: false,
+  positionals: [{name: "iterable", description: "@<iterable> name", required: true}],
+  remainder: {name: "prompt", description: "Prompt template to run for each item", required: true}
 } as const satisfies AgentCommandInputSchema;
 
 function interpolate(template: string, variables: Record<string, any>): string {
@@ -46,7 +34,7 @@ const help: string = `Process each item in an iterable with a custom prompt.
 /foreach @files Add comments to {file}
 /foreach @users Welcome {name} from {city}`;
 
-async function execute({positionals, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
+async function execute({positionals, remainder, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   const iterableService = agent.requireServiceByType(IterableService);
   const iterableName = positionals.iterable.replace(/^@/, "");
 
@@ -56,7 +44,7 @@ async function execute({positionals, agent}: AgentCommandInputType<typeof inputS
     let count = 0;
     for await (const item of iterableService.generate(iterableName, agent)) {
       count++;
-      const interpolatedPrompt = interpolate(positionals.prompt, item.variables);
+      const interpolatedPrompt = interpolate(remainder, item.variables);
       const chatService = agent.requireServiceByType(ChatService);
       const chatConfig = chatService.getChatConfig(agent);
       try {
