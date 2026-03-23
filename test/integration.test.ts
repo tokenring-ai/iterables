@@ -1,11 +1,11 @@
-import Agent from '@tokenring-ai/agent/Agent';
+import {Agent} from "@tokenring-ai/agent";
 import createTestingAgent from "@tokenring-ai/agent/test/createTestingAgent";
 import TokenRingApp from "@tokenring-ai/app";
 import createTestingApp from "@tokenring-ai/app/test/createTestingApp";
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
-import type {IterableItem, IterableProvider, IterableSpec} from '../IterableProvider';
-import IterableService from '../IterableService';
-import {IterableState} from '../state/iterableState';
+import type {IterableItem, IterableProvider, IterableSpec} from '../IterableProvider.js';
+import IterableService from '../IterableService.js';
+import {IterableState} from '../state/iterableState.js';
 
 class FileIterableProvider implements IterableProvider {
   readonly type = 'file';
@@ -107,10 +107,6 @@ describe('Integration Tests', () => {
 
   describe('Complete Iterable Workflow', () => {
     it('should handle full lifecycle from definition to generation', async () => {
-      // Register providers
-      service.registerProvider('file', fileProvider);
-      service.registerProvider('json', jsonProvider);
-
       // Define iterables
       await service.define('files', 'file', {
         pattern: '*.ts',
@@ -174,7 +170,7 @@ describe('Integration Tests', () => {
 
       // Try to define with unknown provider
       await expect(
-        service.define('test', 'unknown', {}, undefined, agent)
+        service.define('test', 'unknown', {}, agent)
       ).rejects.toThrow('Unknown iterable type: unknown');
 
       // Try to delete non-existent iterable
@@ -255,7 +251,7 @@ describe('Integration Tests', () => {
       service.registerProvider('file', fileProvider);
       service.registerProvider('json', jsonProvider);
       
-      await service.define('files1', 'file', { pattern: '*.ts' },  agent);
+      await service.define('files1', 'file', { pattern: '*.ts' }, agent);
       await service.define('files2', 'file', { pattern: '*.js' }, agent);
       await service.define('items1', 'json', { file: 'data1.json' }, agent);
 
@@ -320,15 +316,14 @@ describe('Integration Tests', () => {
       service.registerProvider('failing', failingProvider);
 
       // Update the iterable to use failing provider
-      // noinspection ES6MissingAwait
-      service.define('failing', 'failing', {},  agent);
+      await service.define('failing', 'failing', {}, agent);
 
       let errorCaught = false;
       try {
         for await (const _ of service.generate('failing', agent)) {
           // First item should work
         }
-      } catch (error) {
+      } catch (error: any) {
         errorCaught = true;
         expect(error.message).toBe('Generation failed');
       }
@@ -354,7 +349,7 @@ describe('Integration Tests', () => {
 
       // This should work fine
       await expect(
-        service.define('test', 'error', {},  agent)
+        service.define('test', 'error', {}, agent)
       ).resolves.not.toThrow();
 
       // But getting a non-existent provider should fail

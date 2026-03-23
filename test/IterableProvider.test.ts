@@ -1,9 +1,6 @@
-import Agent from '@tokenring-ai/agent/Agent';
+import {Agent} from "@tokenring-ai/agent";
 import {beforeEach, describe, expect, it, vi} from 'vitest';
-import type {IterableItem, IterableProvider, IterableSpec} from '../IterableProvider';
-
-// Mock the agent dependencies
-vi.mock('@tokenring-ai/agent/Agent');
+import type {IterableItem, IterableProvider, IterableSpec} from '../IterableProvider.js';
 
 describe('IterableProvider Interface', () => {
   let mockAgent: Agent;
@@ -107,9 +104,6 @@ describe('IterableProvider Interface', () => {
     it('should handle empty specifications', () => {
       const emptySpec: IterableSpec = {};
       expect(emptySpec).toEqual({});
-
-      const nullSpec: IterableSpec = {};
-      expect(nullSpec).toEqual({});
     });
   });
 
@@ -212,7 +206,7 @@ describe('IterableProvider Interface', () => {
             throw new Error('Should not reach here');
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         errorCaught = true;
         expect(error.message).toBe('Generation failed');
       }
