@@ -3,9 +3,9 @@ import createTestingAgent from "@tokenring-ai/agent/test/createTestingAgent";
 import TokenRingApp from "@tokenring-ai/app";
 import createTestingApp from "@tokenring-ai/app/test/createTestingApp";
 import {beforeEach, describe, expect, it, vi} from 'vitest';
-import commands from '../commands.js';
-import {IterableItem, IterableProvider, IterableSpec} from "../IterableProvider.js";
-import IterableService from '../IterableService.js';
+import commands from '../commands.ts';
+import {IterableItem, IterableProvider, IterableSpec} from "../IterableProvider.ts";
+import IterableService from '../IterableService.ts';
 
 class StaticIterableProvider implements IterableProvider {
   readonly type = 'static';

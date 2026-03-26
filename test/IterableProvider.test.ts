@@ -1,6 +1,6 @@
 import {Agent} from "@tokenring-ai/agent";
 import {beforeEach, describe, expect, it, vi} from 'vitest';
-import type {IterableItem, IterableProvider, IterableSpec} from '../IterableProvider.js';
+import type {IterableItem, IterableProvider, IterableSpec} from '../IterableProvider.ts';
 
 describe('IterableProvider Interface', () => {
   let mockAgent: Agent;

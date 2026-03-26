@@ -2,8 +2,8 @@ import {AgentCommandService} from "@tokenring-ai/agent";
 import {TokenRingPlugin} from "@tokenring-ai/app";
 import {z} from "zod";
 import agentCommands from "./commands.ts";
-import IterableService from "./IterableService.js";
-import packageJSON from './package.json' with {type: 'json'};
+import IterableService from "./IterableService.ts";
+import packageJSON from "./package.json" with {type: "json"};
 
 const packageConfigSchema = z.object({});
 

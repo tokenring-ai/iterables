@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
-import {IterableState, StoredIterable} from '../state/iterableState.js';
+import {IterableState, StoredIterable} from '../state/iterableState.ts';
 
 describe('IterableState', () => {
   let state: IterableState;

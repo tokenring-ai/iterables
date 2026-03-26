@@ -23,7 +23,7 @@ const inputSchema = {
 
 async function execute({positionals: {name}, remainder, args, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   const iterableService = agent.requireServiceByType(IterableService);
-  const type = args['--type']
+  const type = args['--type'];
 
   const provider = iterableService.getProvider(type);
   if (!provider) throw new CommandFailedError(`Unknown iterable type: ${type}`);
@@ -32,7 +32,7 @@ async function execute({positionals: {name}, remainder, args, agent}: AgentComma
   const providerArgs = parseArgs({args: parts, options: {...provider.getArgsConfig().options}, strict: false});
 
   try {
-    await iterableService.define(name, type, providerArgs, agent);
+    await iterableService.define(name, type, providerArgs.values, agent);
     return `Defined iterable: @${name} (${type})`;
   } catch (error) {
     throw new CommandFailedError(`Failed to define iterable: ${error}`);

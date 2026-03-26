@@ -430,7 +430,7 @@ The package integrates with TokenRing as a plugin:
 
 ```typescript
 import {TokenRingApp} from "@tokenring-ai/app";
-import iterablesPlugin from "@tokenring-ai/iterables/plugin";
+import iterablesPlugin from '@tokenring-ai/iterables/plugin';
 
 const app = new TokenRingApp();
 app.use(iterablesPlugin);
@@ -664,34 +664,30 @@ Manage named iterables with subcommands:
 #### define
 
 ```typescript
-async function execute(remainder: string, agent: Agent): Promise<string> {
-  const parts = remainder.trim().split(/\s+/);
-  const name = parts[0];
-  if (!name || name.startsWith('--')) throw new CommandFailedError("Usage: /iterable define <name> --type <type> [options]");
-  
-  const args = parseArgs({ args: parts.slice(1), options: { type: {type: 'string'} }, strict: false, allowPositionals: true });
-  const type = args.values.type;
-  if (typeof type !== 'string') throw new CommandFailedError("Usage: /iterable define <name> --type <type> [options]");
-  
+async function execute({positionals: {name}, remainder, args, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
+  const iterableService = agent.requireServiceByType(IterableService);
+  const type = args['--type']
+
   const provider = iterableService.getProvider(type);
   if (!provider) throw new CommandFailedError(`Unknown iterable type: ${type}`);
-  
-  const providerArgs = parseArgs({ args: parts.slice(1), options: { ...provider.getArgsConfig().options }, strict: false });
-  const spec: Record<string, any> = {};
-  for (const [key, value] of Object.entries(providerArgs.values)) {
-    if (key !== 'type') spec[key] = value;
+
+  const parts = remainder?.split(/\s+/) ?? [];
+  const providerArgs = parseArgs({args: parts, options: {...provider.getArgsConfig().options}, strict: false});
+
+  try {
+    await iterableService.define(name, type, providerArgs, agent);
+    return `Defined iterable: @${name} (${type})`;
+  } catch (error) {
+    throw new CommandFailedError(`Failed to define iterable: ${error}`);
   }
-  
-  await iterableService.define(name, type, spec, agent);
-  return `Defined iterable: @${name} (${type})`;
 }
 ```
 
 #### list
 
 ```typescript
-async function execute(_remainder: string, agent: Agent): Promise<string> {
-  const iterables = iterableService.list(agent);
+async function execute({agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
+  const iterables = agent.requireServiceByType(IterableService).list(agent);
   if (iterables.length === 0) return "No iterables defined";
   return `Available iterables:\n${markdownList(iterables.map(it => `@${it.name} = ${it.type}`))}`;
 }
@@ -700,13 +696,9 @@ async function execute(_remainder: string, agent: Agent): Promise<string> {
 #### show
 
 ```typescript
-async function execute(remainder: string, agent: Agent): Promise<string> {
-  const name = remainder.trim().split(/\s+/)[0];
-  if (!name) throw new CommandFailedError("Usage: /iterable show <name>");
-  
-  const iterable = iterableService.get(name, agent);
+async function execute({positionals: { name }, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
+  const iterable = agent.requireServiceByType(IterableService).get(name, agent);
   if (!iterable) throw new CommandFailedError(`Iterable not found: @${name}`);
-  
   return [
     `Iterable: @${iterable.name}`,
     `Type: ${iterable.type}`,
@@ -720,13 +712,9 @@ async function execute(remainder: string, agent: Agent): Promise<string> {
 #### delete
 
 ```typescript
-async function execute(remainder: string, agent: Agent): Promise<string> {
-  const name = remainder.trim().split(/\s+/)[0];
-  if (!name) throw new CommandFailedError("Usage: /iterable delete <name>");
-  
-  const deleted = iterableService.delete(name, agent);
+async function execute({positionals: { name }, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
+  const deleted = agent.requireServiceByType(IterableService).delete(name, agent);
   if (!deleted) throw new CommandFailedError(`Iterable not found: @${name}`);
-  
   return `Deleted iterable: @${name}`;
 }
 ```
@@ -747,29 +735,9 @@ Process each item in an iterable:
 #### Implementation
 
 ```typescript
-async function execute(remainder: string, agent: Agent): Promise<string> {
+async function execute({positionals, remainder, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   const iterableService = agent.requireServiceByType(IterableService);
-
-  if (!remainder || !remainder.trim()) {
-    throw new CommandFailedError(help);
-  }
-
-  const trimmed = remainder.trim();
-  if (!trimmed.startsWith('@')) {
-    throw new CommandFailedError("Usage: /foreach @<iterable> <prompt>");
-  }
-
-  const firstSpace = trimmed.indexOf(' ');
-  if (firstSpace === -1) {
-    throw new CommandFailedError("Usage: /foreach @<iterable> <prompt>");
-  }
-
-  const iterableName = trimmed.substring(1, firstSpace);
-  const prompt = trimmed.substring(firstSpace + 1).trim().replace(/^["']|["']$/g, '');
-
-  if (!prompt) {
-    throw new CommandFailedError("Usage: /foreach @<iterable> <prompt>");
-  }
+  const iterableName = positionals.iterable.replace(/^@/, "");
 
   const checkpoint = agent.generateCheckpoint();
 
@@ -777,21 +745,16 @@ async function execute(remainder: string, agent: Agent): Promise<string> {
     let count = 0;
     for await (const item of iterableService.generate(iterableName, agent)) {
       count++;
-
-      const interpolatedPrompt = interpolate(prompt, item.variables);
-
+      const interpolatedPrompt = interpolate(remainder, item.variables);
       const chatService = agent.requireServiceByType(ChatService);
       const chatConfig = chatService.getChatConfig(agent);
-
       try {
         await runChat({ input: interpolatedPrompt, chatConfig, agent});
       } catch (error) {
         throw new CommandFailedError(`Error processing item ${count}: ${error}`);
       }
-
       agent.restoreState(checkpoint.state);
     }
-
     return `Processed ${count} items`;
   } finally {
     agent.restoreState(checkpoint.state);
@@ -959,8 +922,8 @@ bun run test:coverage
 
 ### Development Dependencies
 
-- `vitest` (^4.1.0) - Testing framework
-- `typescript` (^5.9.3) - TypeScript compiler
+- `vitest` (^4.1.1) - Testing framework
+- `typescript` (^6.0.2) - TypeScript compiler
 
 ## License
 

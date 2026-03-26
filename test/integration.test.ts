@@ -3,9 +3,9 @@ import createTestingAgent from "@tokenring-ai/agent/test/createTestingAgent";
 import TokenRingApp from "@tokenring-ai/app";
 import createTestingApp from "@tokenring-ai/app/test/createTestingApp";
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
-import type {IterableItem, IterableProvider, IterableSpec} from '../IterableProvider.js';
-import IterableService from '../IterableService.js';
-import {IterableState} from '../state/iterableState.js';
+import type {IterableItem, IterableProvider, IterableSpec} from '../IterableProvider.ts';
+import IterableService from '../IterableService.ts';
+import {IterableState} from '../state/iterableState.ts';
 
 class FileIterableProvider implements IterableProvider {
   readonly type = 'file';
