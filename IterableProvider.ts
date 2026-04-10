@@ -1,4 +1,4 @@
-import Agent from "@tokenring-ai/agent/Agent";
+import type Agent from "@tokenring-ai/agent/Agent";
 
 export interface IterableItem {
   value: any;
@@ -21,7 +21,9 @@ export interface IterableProvider {
   readonly type: string;
   readonly description: string;
 
-  getArgsConfig(): { options: Record<string, { type: 'string' | 'boolean', multiple?: boolean }> };
+  getArgsConfig(): {
+    options: Record<string, { type: "string" | "boolean"; multiple?: boolean }>;
+  };
 
   generate(spec: IterableSpec, agent: Agent): AsyncGenerator<IterableItem>;
 }

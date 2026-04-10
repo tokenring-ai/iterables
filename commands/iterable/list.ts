@@ -1,13 +1,15 @@
-import {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand} from "@tokenring-ai/agent/types";
+import type {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand,} from "@tokenring-ai/agent/types";
 import markdownList from "@tokenring-ai/utility/string/markdownList";
 import IterableService from "../../IterableService.ts";
 
 const inputSchema = {} as const satisfies AgentCommandInputSchema;
 
-async function execute({agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
+function execute({
+                   agent,
+                 }: AgentCommandInputType<typeof inputSchema>): string {
   const iterables = agent.requireServiceByType(IterableService).list(agent);
   if (iterables.length === 0) return "No iterables defined";
-  return `Available iterables:\n${markdownList(iterables.map(it => `@${it.name} = ${it.type}`))}`;
+  return `Available iterables:\n${markdownList(iterables.map((it) => `@${it.name} = ${it.type}`))}`;
 }
 
 export default {

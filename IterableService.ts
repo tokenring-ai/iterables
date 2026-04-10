@@ -1,9 +1,9 @@
-import Agent from "@tokenring-ai/agent/Agent";
+import type Agent from "@tokenring-ai/agent/Agent";
 
-import {TokenRingService} from "@tokenring-ai/app/types";
+import type {TokenRingService} from "@tokenring-ai/app/types";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
-import type {IterableItem, IterableProvider, IterableSpec} from "./IterableProvider.ts";
-import {IterableState, StoredIterable} from "./state/iterableState.ts";
+import type {IterableItem, IterableProvider, IterableSpec,} from "./IterableProvider.ts";
+import {IterableState, type StoredIterable} from "./state/iterableState.ts";
 
 export default class IterableService implements TokenRingService {
   readonly name = "IterableService";
@@ -17,7 +17,12 @@ export default class IterableService implements TokenRingService {
     agent.initializeState(IterableState, {});
   }
 
-  async define(name: string, type: string, spec: IterableSpec, agent: Agent): Promise<void> {
+  define(
+    name: string,
+    type: string,
+    spec: IterableSpec,
+    agent: Agent,
+  ): Promise<void> {
     const provider = this.providers.getItemByName(type);
     if (!provider) {
       throw new Error(`Unknown iterable type: ${type}`);
@@ -35,6 +40,7 @@ export default class IterableService implements TokenRingService {
     agent.mutateState(IterableState, (state: IterableState) => {
       state.iterables.set(name, iterable);
     });
+    return Promise.resolve();
   }
 
   get(name: string, agent: Agent): StoredIterable | undefined {

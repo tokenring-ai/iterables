@@ -1,5 +1,5 @@
 import {CommandFailedError} from "@tokenring-ai/agent/AgentError";
-import {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand} from "@tokenring-ai/agent/types";
+import type {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand,} from "@tokenring-ai/agent/types";
 import {parseArgs} from "node:util";
 import IterableService from "../../IterableService.ts";
 
@@ -18,18 +18,27 @@ const inputSchema = {
       required: true,
     },
   ],
-  remainder: {name: "options", description: "Options for the iterable"}
+  remainder: {name: "options", description: "Options for the iterable"},
 } as const satisfies AgentCommandInputSchema;
 
-async function execute({positionals: {name}, remainder, args, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
+async function execute({
+                         positionals: {name},
+                         remainder,
+                         args,
+                         agent,
+                       }: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   const iterableService = agent.requireServiceByType(IterableService);
-  const type = args['--type'];
+  const type = args["--type"];
 
   const provider = iterableService.getProvider(type);
   if (!provider) throw new CommandFailedError(`Unknown iterable type: ${type}`);
 
   const parts = remainder?.split(/\s+/) ?? [];
-  const providerArgs = parseArgs({args: parts, options: {...provider.getArgsConfig().options}, strict: false});
+  const providerArgs = parseArgs({
+    args: parts,
+    options: {...provider.getArgsConfig().options},
+    strict: false,
+  });
 
   try {
     await iterableService.define(name, type, providerArgs.values, agent);
@@ -51,5 +60,5 @@ Create a new named iterable with the specified type and configuration.
 /iterable define files --type file --pattern "**/*.ts"
 /iterable define projects --type json --file "projects.json"`,
   execute,
-  inputSchema
+  inputSchema,
 } satisfies TokenRingAgentCommand<typeof inputSchema>;

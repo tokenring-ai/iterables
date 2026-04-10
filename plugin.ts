@@ -1,5 +1,5 @@
 import {AgentCommandService} from "@tokenring-ai/agent";
-import {TokenRingPlugin} from "@tokenring-ai/app";
+import type {TokenRingPlugin} from "@tokenring-ai/app";
 import {z} from "zod";
 import agentCommands from "./commands.ts";
 import IterableService from "./IterableService.ts";
@@ -12,11 +12,11 @@ export default {
   displayName: "Batch Iterables",
   version: packageJSON.version,
   description: packageJSON.description,
-  install(app, config) {
-    app.waitForService(AgentCommandService, agentCommandService =>
-      agentCommandService.addAgentCommands(agentCommands)
+  install(app, _config) {
+    app.waitForService(AgentCommandService, (agentCommandService) =>
+      agentCommandService.addAgentCommands(agentCommands),
     );
     app.addServices(new IterableService());
   },
-  config: packageConfigSchema
+  config: packageConfigSchema,
 } satisfies TokenRingPlugin<typeof packageConfigSchema>;
