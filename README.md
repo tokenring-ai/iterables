@@ -418,6 +418,7 @@ const packageConfigSchema = z.object({});
 ```
 
 No configuration is required by default. The plugin automatically:
+
 1. Registers chat commands (`/iterable` and `/foreach`)
 2. Adds the IterableService to the application
 3. Initializes the IterableState for each agent

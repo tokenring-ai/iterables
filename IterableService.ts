@@ -2,7 +2,7 @@ import type Agent from "@tokenring-ai/agent/Agent";
 
 import type {TokenRingService} from "@tokenring-ai/app/types";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
-import type {IterableItem, IterableProvider, IterableSpec,} from "./IterableProvider.ts";
+import type {IterableItem, IterableProvider, IterableSpec} from "./IterableProvider.ts";
 import {IterableState, type StoredIterable} from "./state/iterableState.ts";
 
 export default class IterableService implements TokenRingService {
