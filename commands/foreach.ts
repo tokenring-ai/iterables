@@ -62,9 +62,8 @@ async function execute({
       const chatConfig = chatService.getChatConfig(agent);
       try {
         await runChat({input: interpolatedPrompt, chatConfig, agent});
-      } catch (error) {
-        throw new CommandFailedError(
-          `Error processing item ${count}: ${error}`,
+      } catch (error: unknown) {
+        throw new CommandFailedError(`Error processing item ${count}`, { cause: error as Error },
         );
       }
       agent.restoreState(checkpoint.state);

@@ -43,8 +43,8 @@ async function execute({
   try {
     await iterableService.define(name, type, providerArgs.values, agent);
     return `Defined iterable: @${name} (${type})`;
-  } catch (error) {
-    throw new CommandFailedError(`Failed to define iterable: ${error}`);
+  } catch (error: unknown) {
+    throw new CommandFailedError("Failed to define iterable:", { cause: error as Error });
   }
 }
 
