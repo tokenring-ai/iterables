@@ -10,8 +10,8 @@ export default class IterableService implements TokenRingService {
   description = "Manages named iterables for batch operations";
 
   private providers = new KeyedRegistry<IterableProvider>();
-  registerProvider = this.providers.register;
-  getProvider = this.providers.getItemByName;
+  registerProvider = this.providers.set;
+  getProvider = this.providers.get;
 
   attach(agent: Agent): void {
     agent.initializeState(IterableState, {});
@@ -23,7 +23,7 @@ export default class IterableService implements TokenRingService {
     spec: IterableSpec,
     agent: Agent,
   ): Promise<void> {
-    const provider = this.providers.getItemByName(type);
+    const provider = this.providers.get(type);
     if (!provider) {
       throw new Error(`Unknown iterable type: ${type}`);
     }
@@ -72,7 +72,7 @@ export default class IterableService implements TokenRingService {
       throw new Error(`Iterable not found: ${name}`);
     }
 
-    const provider = this.providers.getItemByName(iterable.type);
+    const provider = this.providers.get(iterable.type);
     if (!provider) {
       throw new Error(`Provider not found for type: ${iterable.type}`);
     }
