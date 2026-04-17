@@ -5,7 +5,7 @@ import IterableService from "../../IterableService.ts";
 
 const inputSchema = {
   args: {
-    "--type": {
+    "type": {
       type: "string",
       required: true,
       description: "The iterable type",
@@ -28,7 +28,7 @@ async function execute({
                          agent,
                        }: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   const iterableService = agent.requireServiceByType(IterableService);
-  const type = args["--type"];
+  const type = args.type;
 
   const provider = iterableService.getProvider(type);
   if (!provider) throw new CommandFailedError(`Unknown iterable type: ${type}`);
