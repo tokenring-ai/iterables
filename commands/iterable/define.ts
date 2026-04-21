@@ -1,11 +1,11 @@
-import {CommandFailedError} from "@tokenring-ai/agent/AgentError";
-import type {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand} from "@tokenring-ai/agent/types";
-import {parseArgs} from "node:util";
+import { parseArgs } from "node:util";
+import { CommandFailedError } from "@tokenring-ai/agent/AgentError";
+import type { AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand } from "@tokenring-ai/agent/types";
 import IterableService from "../../IterableService.ts";
 
 const inputSchema = {
   args: {
-    "type": {
+    type: {
       type: "string",
       required: true,
       description: "The iterable type",
@@ -18,15 +18,10 @@ const inputSchema = {
       required: true,
     },
   ],
-  remainder: {name: "options", description: "Options for the iterable"},
+  remainder: { name: "options", description: "Options for the iterable" },
 } as const satisfies AgentCommandInputSchema;
 
-async function execute({
-                         positionals: {name},
-                         remainder,
-                         args,
-                         agent,
-                       }: AgentCommandInputType<typeof inputSchema>): Promise<string> {
+async function execute({ positionals: { name }, remainder, args, agent }: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   const iterableService = agent.requireServiceByType(IterableService);
   const type = args.type;
 
@@ -36,7 +31,7 @@ async function execute({
   const parts = remainder?.split(/\s+/) ?? [];
   const providerArgs = parseArgs({
     args: parts,
-    options: {...provider.getArgsConfig().options},
+    options: { ...provider.getArgsConfig().options },
     strict: false,
   });
 

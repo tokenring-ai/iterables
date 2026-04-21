@@ -4,4 +4,4 @@ export type {
   IterableProvider,
   IterableSpec,
 } from "./IterableProvider.ts";
-export {default as IterableService} from "./IterableService.ts";
+export { default as IterableService } from "./IterableService.ts";
