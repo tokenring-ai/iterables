@@ -323,7 +323,7 @@ describe('Integration Tests', () => {
         for await (const _ of service.generate('failing', agent)) {
           // First item should work
         }
-      } catch (error: any) {
+      } catch (error) {
         errorCaught = true;
         expect(error.message).toBe('Generation failed');
       }

@@ -206,7 +206,7 @@ describe('IterableProvider Interface', () => {
             throw new Error('Should not reach here');
           }
         }
-      } catch (error: any) {
+      } catch (error) {
         errorCaught = true;
         expect(error.message).toBe('Generation failed');
       }
