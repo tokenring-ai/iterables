@@ -1,31 +1,31 @@
-import {Agent} from "@tokenring-ai/agent";
+import { Agent } from "@tokenring-ai/agent";
 import createTestingAgent from "@tokenring-ai/agent/test/createTestingAgent";
 import TokenRingApp from "@tokenring-ai/app";
 import createTestingApp from "@tokenring-ai/app/test/createTestingApp";
-import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
-import type {IterableItem, IterableProvider, IterableSpec} from '../IterableProvider.ts';
-import IterableService from '../IterableService.ts';
-import {IterableState} from '../state/iterableState.ts';
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { IterableItem, IterableProvider, IterableSpec } from "../IterableProvider.ts";
+import IterableService from "../IterableService.ts";
+import { IterableState } from "../state/iterableState.ts";
 
 class FileIterableProvider implements IterableProvider {
-  readonly type = 'file';
-  readonly description = 'File-based iterable provider';
-  
+  readonly type = "file";
+  readonly description = "File-based iterable provider";
+
   getArgsConfig() {
     return {
       options: {
-        pattern: { type: 'string' as const },
-        directory: { type: 'string' as const },
-        recursive: { type: 'boolean' as const }
+        pattern: { type: "string" as const },
+        directory: { type: "string" as const },
+        recursive: { type: "boolean" as const }
       }
     };
   }
 
-  async *generate(spec: IterableSpec, agent: Agent): AsyncGenerator<IterableItem> {
-    const pattern = spec.pattern as string || '*.txt';
-    const directory = spec.directory as string || '.';
-    const files = ['file1.txt', 'file2.txt', 'file3.txt'];
-    
+  async* generate(spec: IterableSpec, agent: Agent): AsyncGenerator<IterableItem> {
+    const pattern = spec.pattern as string || "*.txt";
+    const directory = spec.directory as string || ".";
+    const files = ["file1.txt", "file2.txt", "file3.txt"];
+
     for (let i = 0; i < files.length; i++) {
       yield {
         value: `${directory}/${files[i]}`,
@@ -41,27 +41,27 @@ class FileIterableProvider implements IterableProvider {
 }
 
 class JsonIterableProvider implements IterableProvider {
-  readonly type = 'json';
-  readonly description = 'JSON file iterable provider';
-  
+  readonly type = "json";
+  readonly description = "JSON file iterable provider";
+
   getArgsConfig() {
     return {
       options: {
-        file: { type: 'string' as const },
-        arrayPath: { type: 'string' as const }
+        file: { type: "string" as const },
+        arrayPath: { type: "string" as const }
       }
     };
   }
-  
-  async *generate(spec: IterableSpec, agent: Agent): AsyncGenerator<IterableItem> {
-    const file = spec.file as string || 'data.json';
-    const arrayPath = spec.arrayPath as string || 'items';
+
+  async* generate(spec: IterableSpec, agent: Agent): AsyncGenerator<IterableItem> {
+    const file = spec.file as string || "data.json";
+    const arrayPath = spec.arrayPath as string || "items";
     const items = [
-      { id: 1, name: 'Item 1', value: 'value1' },
-      { id: 2, name: 'Item 2', value: 'value2' },
-      { id: 3, name: 'Item 3', value: 'value3' }
+      { id: 1, name: "Item 1", value: "value1" },
+      { id: 2, name: "Item 2", value: "value2" },
+      { id: 3, name: "Item 3", value: "value3" }
     ];
-    
+
     for (let i = 0; i < items.length; i++) {
       yield {
         value: items[i],
@@ -76,7 +76,7 @@ class JsonIterableProvider implements IterableProvider {
   }
 }
 
-describe('Integration Tests', () => {
+describe("Integration Tests", () => {
   let service: IterableService;
   let app: TokenRingApp;
   let agent: Agent;
@@ -88,105 +88,105 @@ describe('Integration Tests', () => {
 
     app = createTestingApp();
     agent = createTestingAgent(app);
-    
+
     service = new IterableService();
     app.addServices(service);
 
     service.attach(agent);
-    
+
     fileProvider = new FileIterableProvider();
     jsonProvider = new JsonIterableProvider();
 
-    service.registerProvider('file', fileProvider);
-    service.registerProvider('json', jsonProvider);
+    service.registerProvider("file", fileProvider);
+    service.registerProvider("json", jsonProvider);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  describe('Complete Iterable Workflow', () => {
-    it('should handle full lifecycle from definition to generation', async () => {
+  describe("Complete Iterable Workflow", () => {
+    it("should handle full lifecycle from definition to generation", async () => {
       // Define iterables
-      await service.define('files', 'file', {
-        pattern: '*.ts',
-        directory: 'src'
+      await service.define("files", "file", {
+        pattern: "*.ts",
+        directory: "src"
       }, agent);
 
-      await service.define('items', 'json', {
-        file: 'items.json',
-        arrayPath: 'data'
+      await service.define("items", "json", {
+        file: "items.json",
+        arrayPath: "data"
       }, agent);
 
       // Verify definition
-      const filesIterable = service.get('files', agent);
-      const itemsIterable = service.get('items', agent);
+      const filesIterable = service.get("files", agent);
+      const itemsIterable = service.get("items", agent);
 
-      expect(filesIterable?.name).toBe('files');
-      expect(filesIterable?.type).toBe('file');
-      expect(itemsIterable?.name).toBe('items');
-      expect(itemsIterable?.type).toBe('json');
+      expect(filesIterable?.name).toBe("files");
+      expect(filesIterable?.type).toBe("file");
+      expect(itemsIterable?.name).toBe("items");
+      expect(itemsIterable?.type).toBe("json");
 
       // Test generation
       const fileItems = [];
-      for await (const item of service.generate('files', agent)) {
+      for await (const item of service.generate("files", agent)) {
         fileItems.push(item);
       }
 
       expect(fileItems).toHaveLength(3);
-      expect(fileItems[0].value).toBe('src/file1.txt');
+      expect(fileItems[0].value).toBe("src/file1.txt");
 
       const itemItems = [];
-      for await (const item of service.generate('items', agent)) {
+      for await (const item of service.generate("items", agent)) {
         itemItems.push(item);
       }
 
       expect(itemItems).toHaveLength(3);
-      expect(itemItems[0].value).toEqual({ id: 1, name: 'Item 1', value: 'value1' });
+      expect(itemItems[0].value).toEqual({ id: 1, name: "Item 1", value: "value1" });
 
       // Test listing
       const iterables = service.list(agent);
       expect(iterables).toHaveLength(2);
 
       // Test deletion
-      const deleted = service.delete('files', agent);
+      const deleted = service.delete("files", agent);
       expect(deleted).toBe(true);
 
       const remaining = service.list(agent);
       expect(remaining).toHaveLength(1);
-      expect(remaining[0].name).toBe('items');
+      expect(remaining[0].name).toBe("items");
     });
 
-    it('should handle error scenarios gracefully', async () => {
-      service.registerProvider('file', fileProvider);
+    it("should handle error scenarios gracefully", async () => {
+      service.registerProvider("file", fileProvider);
       service.attach(agent);
 
       // Try to generate non-existent iterable
       await expect(async () => {
-        for await (const _ of service.generate('nonexistent', agent)) {
+        for await (const _ of service.generate("nonexistent", agent)) {
           // Should not reach here
         }
-      }).rejects.toThrow('Iterable not found: nonexistent');
+      }).rejects.toThrow("Iterable not found: nonexistent");
 
       // Try to define with unknown provider
       await expect(
-        service.define('test', 'unknown', {}, agent)
-      ).rejects.toThrow('Unknown iterable type: unknown');
+        service.define("test", "unknown", {}, agent)
+      ).rejects.toThrow("Unknown iterable type: unknown");
 
       // Try to delete non-existent iterable
-      const result = service.delete('nonexistent', agent);
+      const result = service.delete("nonexistent", agent);
       expect(result).toBe(false);
     });
   });
 
-  describe('State Persistence Integration', () => {
-    it('should maintain state across operations', () => {
+  describe("State Persistence Integration", () => {
+    it("should maintain state across operations", () => {
       agent.mutateState(IterableState, state => {
         state.iterables.clear();
-        state.iterables.set('persisted', {
-          name: 'persisted',
-          type: 'file',
-          spec: {pattern: '*.js'},
+        state.iterables.set("persisted", {
+          name: "persisted",
+          type: "file",
+          spec: { pattern: "*.js" },
           createdAt: new Date(),
           updatedAt: new Date()
         });
@@ -195,7 +195,7 @@ describe('Integration Tests', () => {
       // Verify state persistence
       const iterables = service.list(agent);
       expect(iterables).toHaveLength(1);
-      expect(iterables[0].name).toBe('persisted');
+      expect(iterables[0].name).toBe("persisted");
 
       // Test serialization/deserialization
       const serialized = agent.getState(IterableState).serialize();
@@ -203,15 +203,15 @@ describe('Integration Tests', () => {
 
       const newState = new IterableState();
       newState.deserialize(serialized);
-      
+
       const reSerialized = newState.serialize();
-      expect(reSerialized.iterables[0].name).toBe('persisted');
+      expect(reSerialized.iterables[0].name).toBe("persisted");
     });
 
-    it('should handle complex nested specifications', () => {
+    it("should handle complex nested specifications", () => {
       const complexSpec = {
-        pattern: '**/*.ts',
-        exclude: ['node_modules', 'dist'],
+        pattern: "**/*.ts",
+        exclude: ["node_modules", "dist"],
         options: {
           recursive: true,
           ignoreCase: false
@@ -227,8 +227,8 @@ describe('Integration Tests', () => {
 
       const state = new IterableState({
         iterables: [{
-          name: 'complex',
-          type: 'file',
+          name: "complex",
+          type: "file",
           spec: complexSpec,
           createdAt: new Date(),
           updatedAt: new Date()
@@ -240,26 +240,26 @@ describe('Integration Tests', () => {
 
       const newState = new IterableState();
       newState.deserialize(serialized);
-      
-      const retrieved = newState.iterables.get('complex');
+
+      const retrieved = newState.iterables.get("complex");
       expect(retrieved?.spec).toEqual(complexSpec);
     });
   });
 
-  describe('Performance and Concurrency', () => {
-    it('should handle multiple concurrent generations', async () => {
-      service.registerProvider('file', fileProvider);
-      service.registerProvider('json', jsonProvider);
-      
-      await service.define('files1', 'file', { pattern: '*.ts' }, agent);
-      await service.define('files2', 'file', { pattern: '*.js' }, agent);
-      await service.define('items1', 'json', { file: 'data1.json' }, agent);
+  describe("Performance and Concurrency", () => {
+    it("should handle multiple concurrent generations", async () => {
+      service.registerProvider("file", fileProvider);
+      service.registerProvider("json", jsonProvider);
+
+      await service.define("files1", "file", { pattern: "*.ts" }, agent);
+      await service.define("files2", "file", { pattern: "*.js" }, agent);
+      await service.define("items1", "json", { file: "data1.json" }, agent);
 
       // Generate from multiple iterables concurrently
       const promises = [
-        service.generate('files1', agent),
-        service.generate('files2', agent),
-        service.generate('items1', agent)
+        service.generate("files1", agent),
+        service.generate("files2", agent),
+        service.generate("items1", agent)
       ];
 
       const results = await Promise.all(
@@ -277,12 +277,12 @@ describe('Integration Tests', () => {
       expect(results[2]).toHaveLength(3);
     });
 
-    it('should handle large numbers of iterables', async () => {
-      service.registerProvider('file', fileProvider);
-      
+    it("should handle large numbers of iterables", async () => {
+      service.registerProvider("file", fileProvider);
+
       // Create 50 iterables
       for (let i = 0; i < 50; i++) {
-        await service.define(`iterable-${i}`, 'file', { pattern: `pattern-${i}.txt` }, agent);
+        await service.define(`iterable-${i}`, "file", { pattern: `pattern-${i}.txt` }, agent);
       }
 
       const iterables = service.list(agent);
@@ -297,65 +297,65 @@ describe('Integration Tests', () => {
     });
   });
 
-  describe('Error Recovery and Cleanup', () => {
-    it('should cleanup after generation errors', async () => {
-      service.registerProvider('file', fileProvider);
-      await service.define('failing', 'file', {}, agent);
+  describe("Error Recovery and Cleanup", () => {
+    it("should cleanup after generation errors", async () => {
+      service.registerProvider("file", fileProvider);
+      await service.define("failing", "file", {}, agent);
 
       // Mock provider to throw error during generation
       const failingProvider: IterableProvider = {
-        type: 'failing',
-        description: 'Failing provider',
+        type: "failing",
+        description: "Failing provider",
         getArgsConfig: () => ({ options: {} }),
         generate: async function* () {
-          yield { value: 'before-error', variables: {} };
-          throw new Error('Generation failed');
+          yield { value: "before-error", variables: {} };
+          throw new Error("Generation failed");
         }
       };
 
-      service.registerProvider('failing', failingProvider);
+      service.registerProvider("failing", failingProvider);
 
       // Update the iterable to use failing provider
-      await service.define('failing', 'failing', {}, agent);
+      await service.define("failing", "failing", {}, agent);
 
       let errorCaught = false;
       try {
-        for await (const _ of service.generate('failing', agent)) {
+        for await (const _ of service.generate("failing", agent)) {
           // First item should work
         }
       } catch (error) {
         errorCaught = true;
-        expect(error.message).toBe('Generation failed');
+        expect(error.message).toBe("Generation failed");
       }
 
       expect(errorCaught).toBe(true);
 
       // Verify service is still functional
-      const result = service.delete('failing', agent);
+      const result = service.delete("failing", agent);
       expect(result).toBe(true);
     });
 
-    it('should handle provider errors during definition', async () => {
+    it("should handle provider errors during definition", async () => {
       const errorProvider: IterableProvider = {
-        type: 'error',
-        description: 'Error provider',
+        type: "error",
+        description: "Error provider",
         getArgsConfig: () => ({ options: {} }),
         generate: async function* () {
-          yield { value: 'item', variables: {} };
+          yield { value: "item", variables: {} };
         }
       };
 
-      service.registerProvider('error', errorProvider);
+      service.registerProvider("error", errorProvider);
 
       // This should work fine
       await expect(
-        service.define('test', 'error', {}, agent)
+        service.define("test", "error", {}, agent)
       ).resolves.not.toThrow();
 
       // But getting a non-existent provider should fail
       await expect(
-        service.define('test2', 'nonexistent', {}, agent)
-      ).rejects.toThrow('Unknown iterable type: nonexistent');
+        service.define("test2", "nonexistent", {}, agent)
+      ).rejects.toThrow("Unknown iterable type: nonexistent");
     });
   });
 });
